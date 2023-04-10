@@ -1,0 +1,32 @@
+<!-- USE BASH COMMANDS IN THIS PROJECT -->
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta property="og:title" content="Kuopio Public Transport App">
+    <meta property="og:description" content="Find all the busses and bus routes, Vilkku-bicycles and Biketaxis in Kuopio and Siilinjärvi region">
+    <meta property="og:image" content="">
+    <title>Kuopio Public Transport App</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+
+<body>
+    <header>
+        <h1>Kuopio Public Transport App</h1>
+        <div class="input-container">
+            <input id="start" type="text" placeholder="Starting Point" />
+            <input id="end" type="text" placeholder="Destination" />
+            <button id="routeBtn" onclick="onButtonClick()">Get Bus Route</button>
+        </div>
+        <div id="busInfo"></div>
+    </header>
+
+    <div id="map"></div>
+
+    <script src="script.js"></script>
+</body>
+</html>
+
