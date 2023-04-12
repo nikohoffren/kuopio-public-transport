@@ -31,20 +31,7 @@ async function initMap() {
     },
   });
 
-  let busMarkers = [];
-
-  function clearBusMarkers() {
-    for (const marker of busMarkers) {
-      marker.setMap(null);
-    }
-    busMarkers = [];
-  }
-
-  function updateBusPositions() {
-    fetchAndDisplayBusLocations().then(() => {
-      setTimeout(updateBusPositions, 2000); // 2000 milliseconds (2 seconds)
-    });
-  }
+  const LabelOverlay = defineLabelOverlay();
 
   async function fetchAndDisplayBusLocations() {
     clearBusMarkers();
@@ -54,7 +41,6 @@ async function initMap() {
       window.location.hostname === "localhost"
         ? "http://localhost:3999/api/vehiclepositions"
         : "/api/vehiclepositions";
-
 
       const response = await fetch(apiUrl);
 
@@ -77,8 +63,11 @@ async function initMap() {
             scaledSize: new google.maps.Size(30, 30), // Size of the bus icon
           },
         });
-
         busMarkers.push(busMarker);
+
+        const busNumber = busEntity.vehicle.trip.routeId; // Get the bus number from the API response
+        const labelOverlay = new LabelOverlay(position, busNumber, map);
+        busMarkers.push(labelOverlay);
       }
 
     } catch (error) {
@@ -86,6 +75,20 @@ async function initMap() {
     }
   }
 
+  let busMarkers = [];
+
+  function clearBusMarkers() {
+    for (const marker of busMarkers) {
+      marker.setMap(null);
+    }
+    busMarkers = [];
+  }
+
+  function updateBusPositions() {
+    fetchAndDisplayBusLocations().then(() => {
+      setTimeout(updateBusPositions, 2000); // 2000 milliseconds (2 seconds)
+    });
+  }
 
   directionsService = new google.maps.DirectionsService();
   directionsRenderer = new google.maps.DirectionsRenderer();
@@ -148,6 +151,47 @@ async function initMap() {
   });
 
   updateBusPositions();
+}
+
+function defineLabelOverlay() {
+  class LabelOverlay extends google.maps.OverlayView {
+    constructor(position, label, map) {
+      super();
+      this.position = position;
+      this.label = label;
+      this.div = null;
+      this.setMap(map);
+    }
+
+    onAdd() {
+      const div = document.createElement("div");
+      div.style.position = "absolute";
+      div.style.fontSize = "14px";
+      div.style.fontWeight = "bold";
+      div.style.color = "black";
+      div.textContent = this.label;
+
+      this.div = div;
+      const panes = this.getPanes();
+      panes.overlayLayer.appendChild(div);
+    }
+
+    draw() {
+      const overlayProjection = this.getProjection();
+      const position = overlayProjection.fromLatLngToDivPixel(this.position);
+
+      this.div.style.left = `${position.x}px`;
+      this.div.style.top = `${position.y}px`;
+    }
+
+    onRemove() {
+      if (this.div) {
+        this.div.parentNode.removeChild(this.div);
+        this.div = null;
+      }
+    }
+  }
+  return LabelOverlay;
 }
 
 function calculateRoute(origin, destination) {
@@ -257,5 +301,3 @@ document.addEventListener("DOMContentLoaded", () => {
   console.log("DOM fully loaded and parsed");
   loadMap();
 });
-
-// initMap();
