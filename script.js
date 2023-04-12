@@ -32,15 +32,14 @@ async function initMap() {
   });
 
   const LabelOverlay = defineLabelOverlay();
+  const busData = {};
 
   async function fetchAndDisplayBusLocations() {
-    clearBusMarkers();
-
     try {
       const apiUrl =
-      window.location.hostname === "localhost"
-        ? "http://localhost:3999/api/vehiclepositions"
-        : "/api/vehiclepositions";
+        window.location.hostname === "localhost"
+          ? "http://localhost:3999/api/vehiclepositions"
+          : "/api/vehiclepositions";
 
       const response = await fetch(apiUrl);
 
@@ -55,25 +54,48 @@ async function initMap() {
       for (const busEntity of data.entity) {
         const bus = busEntity.vehicle;
         const position = { lat: bus.position.latitude, lng: bus.position.longitude };
-        const busMarker = new google.maps.Marker({
-          position: position,
-          map: map,
-          icon: {
-            url: 'img/bus-stop-icon.png', // URL of the bus icon image
-            scaledSize: new google.maps.Size(30, 30), // Size of the bus icon
-          },
-        });
-        busMarkers.push(busMarker);
+        const busId = bus.vehicle.id;
 
-        const busNumber = busEntity.vehicle.trip.routeId; // Get the bus number from the API response
-        const labelOverlay = new LabelOverlay(position, busNumber, map);
-        busMarkers.push(labelOverlay);
+        if (!busData[busId]) {
+          const busMarker = new google.maps.Marker({
+            position: position,
+            map: map,
+            icon: {
+              url: 'img/bus-stop-icon.png',
+              scaledSize: new google.maps.Size(30, 30),
+            },
+          });
+
+          const infoWindow = new google.maps.InfoWindow({
+            //* converting the bus speed from m/s to km/h
+            content: `Speed: ${(bus.position.speed * 3.6 * 10).toFixed(2)} km/h.`,
+          });
+
+          busMarker.addListener("click", () => {
+            infoWindow.open(map, busMarker);
+          });
+
+          const busNumber = busEntity.vehicle.trip.routeId;
+          const labelOverlay = new LabelOverlay(position, busNumber, map);
+
+          busData[busId] = { marker: busMarker, infoWindow: infoWindow, labelOverlay: labelOverlay };
+        } else {
+          const busMarker = busData[busId].marker;
+          busMarker.setPosition(position);
+
+          const infoWindow = busData[busId].infoWindow;
+          infoWindow.setContent(`Speed: ${bus.position.speed.toFixed(2)} km/h`);
+
+          const labelOverlay = busData[busId].labelOverlay;
+          labelOverlay.updatePosition(position);
+        }
       }
-
     } catch (error) {
       console.error("Error fetching bus locations:", error);
     }
   }
+
+
 
   let busMarkers = [];
 
@@ -190,7 +212,20 @@ function defineLabelOverlay() {
         this.div = null;
       }
     }
+
+    // Add this method to update the position
+    updatePosition(position) {
+      this.position = position;
+      if (this.div) {
+        const overlayProjection = this.getProjection();
+        const newPosition = overlayProjection.fromLatLngToDivPixel(position);
+
+        this.div.style.left = `${newPosition.x}px`;
+        this.div.style.top = `${newPosition.y}px`;
+      }
+    }
   }
+
   return LabelOverlay;
 }
 
