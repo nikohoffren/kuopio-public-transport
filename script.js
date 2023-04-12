@@ -297,7 +297,4 @@ async function loadMap() {
   document.body.appendChild(script);
 }
 
-document.addEventListener("DOMContentLoaded", () => {
-  console.log("DOM fully loaded and parsed");
-  loadMap();
-});
+loadMap();
