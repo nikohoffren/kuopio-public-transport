@@ -31,6 +31,75 @@ async function initMap() {
     mapId: config.GOOGLE_MAPS_MAP_ID,
   });
 
+  class BlinkingCircleOverlay extends google.maps.OverlayView {
+    constructor(position, map) {
+      super();
+      this.position = position;
+      this.div = null;
+      this.setMap(map);
+    }
+
+    onAdd() {
+      const div = document.createElement("div");
+      div.className = "blinking";
+      div.style.position = "absolute";
+      div.style.width = "20px";
+      div.style.height = "20px";
+      div.style.borderRadius = "50%";
+      div.style.backgroundColor = "red";
+
+      this.div = div;
+      const panes = this.getPanes();
+      panes.overlayLayer.appendChild(div);
+    }
+
+    draw() {
+      const overlayProjection = this.getProjection();
+      const position = overlayProjection.fromLatLngToDivPixel(this.position);
+
+      this.div.style.left = `${position.x - 10}px`;
+      this.div.style.top = `${position.y - 10}px`;
+    }
+
+    onRemove() {
+      if (this.div) {
+        this.div.parentNode.removeChild(this.div);
+        this.div = null;
+      }
+    }
+  }
+
+  async function addUserLocationToMap() {
+    try {
+      const position = await getCurrentPosition();
+      //* create an instance of the BlinkingCircleOverlay class, it is working even it seems not to be used
+      const circleOverlay = new BlinkingCircleOverlay(position, map);
+      map.panTo(position);
+    } catch (error) {
+      console.error("Error getting user location:", error);
+    }
+  }
+
+  function getCurrentPosition() {
+    return new Promise((resolve, reject) => {
+      if (navigator.geolocation) {
+        navigator.geolocation.getCurrentPosition(
+          (position) => {
+            const lat = position.coords.latitude;
+            const lng = position.coords.longitude;
+            resolve({ lat, lng });
+          },
+          (error) => {
+            reject(error);
+          }
+        );
+      } else {
+        reject(new Error("Geolocation is not supported by this browser."));
+      }
+    });
+  }
+
+
   const LabelOverlay = defineLabelOverlay();
   const busData = {};
 
@@ -140,7 +209,8 @@ async function initMap() {
     }
   }
 
-  fetchAndDisplayVilkkuBicycles()
+  fetchAndDisplayVilkkuBicycles();
+  addUserLocationToMap();
 
   function updateBusPositions() {
     fetchAndDisplayBusLocations().then(() => {
