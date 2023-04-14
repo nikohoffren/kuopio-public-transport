@@ -268,6 +268,25 @@ async function initMap() {
   startAutocomplete = new google.maps.places.Autocomplete(startInput);
   endAutocomplete = new google.maps.places.Autocomplete(endInput);
 
+  const kuopioBounds = new google.maps.LatLngBounds(
+    new google.maps.LatLng(62.799444, 27.418611),
+    new google.maps.LatLng(63.055833, 27.945833)
+  );
+
+  startAutocomplete = new google.maps.places.Autocomplete(startInput, {
+    bounds: kuopioBounds,
+  });
+
+  endAutocomplete = new google.maps.places.Autocomplete(endInput, {
+    bounds: kuopioBounds,
+  });
+
+  map.addListener("bounds_changed", () => {
+  const newBounds = map.getBounds();
+  startAutocomplete.setBounds(newBounds);
+  endAutocomplete.setBounds(newBounds);
+  });
+
   map.addListener("click", (e) => {
     const location = e.latLng;
     if (settingOrigin) {
