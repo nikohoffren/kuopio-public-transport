@@ -47,7 +47,7 @@ async function initMap() {
 
       // Process and display the bus locations on the map
       const data = await response.json();
-      console.log("Data received:", data);
+      console.log("Vilkku bus data:", data);
 
       for (const busEntity of data.entity) {
         const bus = busEntity.vehicle;
@@ -104,9 +104,12 @@ async function initMap() {
       }
 
       const data = await response.text();
+      console.log("Vilkku bicycles data: " + data);
       const parser = new DOMParser();
       const xmlData = parser.parseFromString(data, "application/xml");
       const bicycleStations = xmlData.getElementsByTagName("marker");
+
+      console.log("Number of bicycle stations:", bicycleStations.length);
 
       for (const station of bicycleStations) {
         const lat = parseFloat(station.getAttribute("lat"));
@@ -136,15 +139,6 @@ async function initMap() {
   }
 
   fetchAndDisplayVilkkuBicycles()
-
-  let busMarkers = [];
-
-  function clearBusMarkers() {
-    for (const marker of busMarkers) {
-      marker.setMap(null);
-    }
-    busMarkers = [];
-  }
 
   function updateBusPositions() {
     fetchAndDisplayBusLocations().then(() => {
