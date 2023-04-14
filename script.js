@@ -1,3 +1,5 @@
+// import LocationSetter from './LocationSetter.js';
+
 let map;
 let config;
 let directionsService;
@@ -7,6 +9,24 @@ let endAutocomplete;
 let startInput;
 let endInput;
 let settingOrigin = false;
+
+class LocationSetter {
+  constructor() {
+    this.settingOrigin = true;
+  }
+
+  isSettingOrigin() {
+    return this.settingOrigin;
+  }
+
+  setOrigin() {
+    this.settingOrigin = true;
+  }
+
+  setDestination() {
+    this.settingOrigin = false;
+  }
+}
 
 function getCurrentPosition() {
   return new Promise((resolve, reject) => {
@@ -49,6 +69,8 @@ async function initMap() {
     },
     mapId: config.GOOGLE_MAPS_MAP_ID,
   });
+
+  const locationSetter = new LocationSetter();
 
   class BlinkingCircleOverlay extends google.maps.OverlayView {
     constructor(position, map) {
@@ -264,7 +286,7 @@ async function initMap() {
   startInput = document.getElementById("start");
   endInput = document.getElementById("end");
 
-  let settingOrigin = true;
+  locationSetter.setOrigin();
 
   function setUserLocation() {
     if (navigator.geolocation) {
@@ -273,7 +295,7 @@ async function initMap() {
           position.coords.latitude,
           position.coords.longitude
         );
-        if (settingOrigin) {
+        if (locationSetter.isSettingOrigin()) {
           startInput.value = `lat: ${userLocation.lat().toFixed(6)}, lng: ${userLocation.lng().toFixed(6)}`;
         } else {
           endInput.value = `lat: ${userLocation.lat().toFixed(6)}, lng: ${userLocation.lng().toFixed(6)}`;
@@ -309,12 +331,12 @@ async function initMap() {
 
   map.addListener("click", (e) => {
     const location = e.latLng;
-    if (settingOrigin) {
+    if (locationSetter.isSettingOrigin()) {
       startInput.value = `lat: ${location.lat().toFixed(6)}, lng: ${location.lng().toFixed(6)}`;
     } else {
       endInput.value = `lat: ${location.lat().toFixed(6)}, lng: ${location.lng().toFixed(6)}`;
     }
-    settingOrigin = false;
+    locationSetter.isSettingOrigin() = false;
   });
 
   updateBusPositions();
@@ -446,11 +468,11 @@ async function onButtonClick() {
   const destination = destinationPlace.geometry.location;
 
   startInput.addEventListener("focus", () => {
-    settingOrigin = true;
+    locationSetter.setOrigin();
   });
 
   endInput.addEventListener("focus", () => {
-    settingOrigin = false;
+    locationSetter.setDestination();
   });
 
 
