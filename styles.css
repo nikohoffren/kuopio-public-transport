@@ -86,6 +86,10 @@ button:hover {
     text-align: center;
 }
 
+#busInfoContent {
+    display: none;
+}
+
 #map {
     height: 100vh;
 }

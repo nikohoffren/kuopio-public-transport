@@ -8,6 +8,25 @@ let startInput;
 let endInput;
 let settingOrigin = false;
 
+function getCurrentPosition() {
+  return new Promise((resolve, reject) => {
+    if (navigator.geolocation) {
+      navigator.geolocation.getCurrentPosition(
+        (position) => {
+          const lat = position.coords.latitude;
+          const lng = position.coords.longitude;
+          resolve({ lat, lng });
+        },
+        (error) => {
+          reject(error);
+        }
+      );
+    } else {
+      reject(new Error("Geolocation is not supported by this browser."));
+    }
+  });
+}
+
 async function initMap() {
   const { Map } = await google.maps.importLibrary("maps", "places");
 
@@ -79,26 +98,6 @@ async function initMap() {
       console.error("Error getting user location:", error);
     }
   }
-
-  function getCurrentPosition() {
-    return new Promise((resolve, reject) => {
-      if (navigator.geolocation) {
-        navigator.geolocation.getCurrentPosition(
-          (position) => {
-            const lat = position.coords.latitude;
-            const lng = position.coords.longitude;
-            resolve({ lat, lng });
-          },
-          (error) => {
-            reject(error);
-          }
-        );
-      } else {
-        reject(new Error("Geolocation is not supported by this browser."));
-      }
-    });
-  }
-
 
   const LabelOverlay = defineLabelOverlay();
   const busData = {};
@@ -265,6 +264,27 @@ async function initMap() {
   startInput = document.getElementById("start");
   endInput = document.getElementById("end");
 
+  let settingOrigin = true;
+
+  function setUserLocation() {
+    if (navigator.geolocation) {
+      navigator.geolocation.getCurrentPosition((position) => {
+        const userLocation = new google.maps.LatLng(
+          position.coords.latitude,
+          position.coords.longitude
+        );
+        if (settingOrigin) {
+          startInput.value = `lat: ${userLocation.lat().toFixed(6)}, lng: ${userLocation.lng().toFixed(6)}`;
+        } else {
+          endInput.value = `lat: ${userLocation.lat().toFixed(6)}, lng: ${userLocation.lng().toFixed(6)}`;
+        }
+      });
+    } else {
+      console.log("Geolocation is not supported by this browser.");
+    }
+  }
+  setUserLocation();
+
   startAutocomplete = new google.maps.places.Autocomplete(startInput);
   endAutocomplete = new google.maps.places.Autocomplete(endInput);
 
@@ -376,7 +396,7 @@ function calculateRoute(origin, destination) {
 }
 
 function displayBusInfo(response) {
-  const busInfoElement = document.getElementById("busInfo");
+  const busInfoElement = document.querySelector("#busInfoContent");
   const legs = response.routes[0].legs;
 
   let busInfoHTML = "";
@@ -399,7 +419,19 @@ function displayBusInfo(response) {
   }
 
   busInfoElement.innerHTML = busInfoHTML;
+
+  // Show the toggleBusInfo button once the route information is available
+  document.querySelector("#toggleBusInfo").style.display = "block";
 }
+
+document.querySelector("#toggleBusInfo").addEventListener("click", () => {
+  const busInfoContent = document.querySelector("#busInfoContent");
+  busInfoContent.style.display = busInfoContent.style.display === "none" ? "block" : "none";
+});
+
+document.querySelector("#toggleBusInfo").style.display = "none";
+const busInfoContent = document.querySelector("#busInfoContent");
+busInfoContent.style.display = "block";
 
 async function onButtonClick() {
   const originPlace = startAutocomplete.getPlace();
@@ -413,15 +445,36 @@ async function onButtonClick() {
   const origin = originPlace.geometry.location;
   const destination = destinationPlace.geometry.location;
 
+  startInput.addEventListener("focus", () => {
+    settingOrigin = true;
+  });
+
+  endInput.addEventListener("focus", () => {
+    settingOrigin = false;
+  });
+
+
   calculateRoute(origin, destination);
 }
 
-function onStartButtonClick() {
-  settingOrigin = true;
-}
+document.getElementById('useCurrentLocation').addEventListener('click', insertCurrentLocation);
 
-function onDestinationButtonClick() {
-  settingOrigin = false;
+async function insertCurrentLocation() {
+  try {
+    const position = await getCurrentPosition();
+    const location = new google.maps.LatLng(position.lat, position.lng);
+    const locationString = `lat: ${position.lat.toFixed(6)}, lng: ${position.lng.toFixed(6)}`;
+
+    if (settingOrigin) {
+      startInput.value = locationString;
+      startAutocomplete.set('place', { geometry: { location: location } });
+    } else {
+      endInput.value = locationString;
+      endAutocomplete.set('place', { geometry: { location: location } });
+    }
+  } catch (error) {
+    console.error('Error getting user location:', error);
+  }
 }
 
 window.addEventListener("resize", () => {
