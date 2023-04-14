@@ -226,7 +226,7 @@ function defineLabelOverlay() {
       div.style.position = "absolute";
       div.style.fontSize = "14px";
       div.style.fontWeight = "bold";
-      div.style.color = "black";
+      div.style.color = "white";
       div.textContent = this.label;
 
       this.div = div;
