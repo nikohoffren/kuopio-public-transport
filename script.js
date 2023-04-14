@@ -7,8 +7,6 @@ let startInput;
 let endInput;
 let settingOrigin = false;
 
-console.log("Script.js loaded");
-
 async function initMap() {
   const { Map } = await google.maps.importLibrary("maps", "places");
 
@@ -95,7 +93,49 @@ async function initMap() {
     }
   }
 
+  async function fetchAndDisplayVilkkuBicycles() {
+    const apiUrl = "/.netlify/functions/vilkkuBicycles";
 
+    try {
+      const response = await fetch(apiUrl);
+
+      if (!response.ok) {
+        throw new Error(`API request failed with status ${response.status}`);
+      }
+
+      const data = await response.text();
+      const parser = new DOMParser();
+      const xmlData = parser.parseFromString(data, "application/xml");
+      const bicycleStations = xmlData.getElementsByTagName("marker");
+
+      for (const station of bicycleStations) {
+        const lat = parseFloat(station.getAttribute("lat"));
+        const lng = parseFloat(station.getAttribute("lng"));
+        const position = { lat, lng };
+
+        const marker = new google.maps.Marker({
+          position,
+          map,
+          icon: {
+            url: "img/vilkku-fillarit.jpeg",
+            scaledSize: new google.maps.Size(30, 30),
+          },
+        });
+
+        const infoWindow = new google.maps.InfoWindow({
+          content: `${station.getAttribute("name")}: ${station.getAttribute("bikes")} bikes available`,
+        });
+
+        marker.addListener("click", () => {
+          infoWindow.open(map, marker);
+        });
+      }
+    } catch (error) {
+      console.error("Error fetching VILKKU bicycle data:", error);
+    }
+  }
+
+  fetchAndDisplayVilkkuBicycles()
 
   let busMarkers = [];
 
@@ -125,14 +165,14 @@ async function initMap() {
       40,
       40,
     ],
-    [
-      "Vilkku Fillarit",
-      62.89532713579455,
-      27.67992516359851,
-      "img/vilkku-fillarit.jpeg",
-      40,
-      40,
-    ],
+    // [
+    //   "Vilkku Fillarit",
+    //   62.89532713579455,
+    //   27.67992516359851,
+    //   "img/vilkku-fillarit.jpeg",
+    //   40,
+    //   40,
+    // ],
   ];
 
   for (let currMarker of markers) {
@@ -324,7 +364,6 @@ async function fetchConfig() {
 
 async function loadMap() {
   const config = await fetchConfig();
-  console.log("Config received:", config);
   const script = document.createElement("script");
   script.src = `https://maps.googleapis.com/maps/api/js?key=${config.GOOGLE_MAPS_API_KEY}&map_ids=${config.GOOGLE_MAPS_MAP_ID}&callback=initMap&libraries=places`;
   script.async = true;
