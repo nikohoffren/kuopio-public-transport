@@ -120,7 +120,7 @@ async function initMap() {
           position,
           map,
           icon: {
-            url: "img/vilkku-fillarit.jpeg",
+            url: "img/vilkku-bicycle-icon.jpg",
             scaledSize: new google.maps.Size(30, 30),
           },
         });
@@ -163,7 +163,7 @@ async function initMap() {
     //   "Vilkku Fillarit",
     //   62.89532713579455,
     //   27.67992516359851,
-    //   "img/vilkku-fillarit.jpeg",
+    //   "img/vilkku-bicycle-icon.jpg",
     //   40,
     //   40,
     // ],
