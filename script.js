@@ -1,4 +1,5 @@
 let map;
+let config;
 let directionsService;
 let directionsRenderer;
 let startAutocomplete;
@@ -27,6 +28,7 @@ async function initMap() {
         ? google.maps.ControlPosition.RIGHT_BOTTOM
         : google.maps.ControlPosition.RIGHT_TOP,
     },
+    mapId: config.GOOGLE_MAPS_MAP_ID,
   });
 
   const LabelOverlay = defineLabelOverlay();
@@ -357,7 +359,7 @@ async function fetchConfig() {
 }
 
 async function loadMap() {
-  const config = await fetchConfig();
+  config = await fetchConfig();
   const script = document.createElement("script");
   script.src = `https://maps.googleapis.com/maps/api/js?key=${config.GOOGLE_MAPS_API_KEY}&map_ids=${config.GOOGLE_MAPS_MAP_ID}&callback=initMap&libraries=places`;
   script.async = true;
