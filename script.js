@@ -1,4 +1,4 @@
-// import LocationSetter from './LocationSetter.js';
+import LocationSetter from './LocationSetter.js';
 
 let map;
 let config;
@@ -9,24 +9,6 @@ let endAutocomplete;
 let startInput;
 let endInput;
 let settingOrigin = false;
-
-class LocationSetter {
-  constructor() {
-    this.settingOrigin = true;
-  }
-
-  isSettingOrigin() {
-    return this.settingOrigin;
-  }
-
-  setOrigin() {
-    this.settingOrigin = true;
-  }
-
-  setDestination() {
-    this.settingOrigin = false;
-  }
-}
 
 function getCurrentPosition() {
   return new Promise((resolve, reject) => {
@@ -47,7 +29,7 @@ function getCurrentPosition() {
   });
 }
 
-async function initMap() {
+export async function initMap() {
   const { Map } = await google.maps.importLibrary("maps", "places");
 
   const isMobile = window.innerWidth <= 800;
@@ -444,40 +426,42 @@ function displayBusInfo(response) {
 
   // Show the toggleBusInfo button once the route information is available
   document.querySelector("#toggleBusInfo").style.display = "block";
-}
-
-document.querySelector("#toggleBusInfo").addEventListener("click", () => {
-  const busInfoContent = document.querySelector("#busInfoContent");
-  busInfoContent.style.display = busInfoContent.style.display === "none" ? "block" : "none";
-});
-
-document.querySelector("#toggleBusInfo").style.display = "none";
-const busInfoContent = document.querySelector("#busInfoContent");
-busInfoContent.style.display = "block";
-
-async function onButtonClick() {
-  const originPlace = startAutocomplete.getPlace();
-  const destinationPlace = endAutocomplete.getPlace();
-
-  if (!originPlace || !originPlace.geometry || !destinationPlace || !destinationPlace.geometry) {
-    alert("Please select valid origin and destination locations.");
-    return;
   }
 
-  const origin = originPlace.geometry.location;
-  const destination = destinationPlace.geometry.location;
-
-  startInput.addEventListener("focus", () => {
-    locationSetter.setOrigin();
+  document.querySelector("#toggleBusInfo").addEventListener("click", () => {
+    const busInfoContent = document.querySelector("#busInfoContent");
+    busInfoContent.style.display = busInfoContent.style.display === "none" ? "block" : "none";
   });
 
-  endInput.addEventListener("focus", () => {
-    locationSetter.setDestination();
-  });
+  document.querySelector("#toggleBusInfo").style.display = "none";
+  const busInfoContent = document.querySelector("#busInfoContent");
+  busInfoContent.style.display = "block";
+
+  export async function onButtonClick() {
+    const originPlace = startAutocomplete.getPlace();
+    const destinationPlace = endAutocomplete.getPlace();
+
+    if (!originPlace || !originPlace.geometry || !destinationPlace || !destinationPlace.geometry) {
+      alert("Please select valid origin and destination locations.");
+      return;
+    }
+
+    const origin = originPlace.geometry.location;
+    const destination = destinationPlace.geometry.location;
+
+    startInput.addEventListener("focus", () => {
+      locationSetter.setOrigin();
+    });
+
+    endInput.addEventListener("focus", () => {
+      locationSetter.setDestination();
+    });
 
 
-  calculateRoute(origin, destination);
-}
+    calculateRoute(origin, destination);
+  }
+
+  document.getElementById("routeBtn").addEventListener("click", onButtonClick);
 
 document.getElementById('useCurrentLocation').addEventListener('click', insertCurrentLocation);
 
@@ -522,7 +506,7 @@ async function fetchConfig() {
   return data;
 }
 
-async function loadMap() {
+export async function loadMap() {
   config = await fetchConfig();
   const script = document.createElement("script");
   script.src = `https://maps.googleapis.com/maps/api/js?key=${config.GOOGLE_MAPS_API_KEY}&map_ids=${config.GOOGLE_MAPS_MAP_ID}&callback=initMap&libraries=places`;
@@ -531,4 +515,5 @@ async function loadMap() {
   document.body.appendChild(script);
 }
 
+window.initMap = initMap;
 loadMap();
