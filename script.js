@@ -120,7 +120,7 @@ export async function initMap() {
 
           const infoWindow = new google.maps.InfoWindow({
             //* converting the bus speed from m/s to km/h
-            content: `Speed: ${(bus.position.speed * 3.6 * 10).toFixed(2)} km/h.`,
+            content: `Speed: ${(bus.position.speed * 3.6).toFixed(2)} km/h.<br>Route: ${bus.trip.routeId}<br>Trip: ${bus.vehicle.label}`,
           });
 
           busMarker.addListener("click", () => {
@@ -136,7 +136,7 @@ export async function initMap() {
           busMarker.setPosition(position);
 
           const infoWindow = busData[busId].infoWindow;
-          infoWindow.setContent(`Speed: ${bus.position.speed.toFixed(2)} km/h`);
+          infoWindow.setContent(`Speed: ${(bus.position.speed * 3.6).toFixed(2)} km/h.<br>Route: ${bus.trip.routeId}<br>Trip: ${bus.vehicle.label}`);
 
           const labelOverlay = busData[busId].labelOverlay;
           labelOverlay.updatePosition(position);
@@ -384,11 +384,13 @@ function displayBusInfo(response) {
         const lineName = step.transit.line.short_name || step.transit.line.name;
         const delay = step.transit.departure_time.value - step.transit.departure_time.real_value;
 
-        busInfoHTML += `<p>Line: ${lineName}<br>
-                        Departure: ${departureTime}<br>
-                        Arrival: ${arrivalTime}<br>
-                        Travel Time: ${step.duration.text}<br>
-                        Delay: ${delay > 0 ? `${delay} minutes late` : "On time"}</p>`;
+        busInfoHTML += `<p>
+                          Line: ${lineName}<br>
+                          Departure: ${departureTime}<br>
+                          Arrival: ${arrivalTime}<br>
+                          Travel Time: ${step.duration.text}<br>
+                          Delay: ${delay > 0 ? `${delay} minutes late` : "On time"}
+                        </p>`;
       }
     }
   }
