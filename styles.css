@@ -36,8 +36,12 @@ header {
 }
 
 #vilkku-logo {
-    width: 4.5em;
-    height: 3rem;
+    width: 2.5em;
+    height: 1.5rem;
+}
+
+a > #vilkku-logo {
+    height: 100%;
 }
 
 @media (max-width: 650px) {
