@@ -403,6 +403,9 @@ function displayBusInfo(response) {
   const busInfoElement = document.querySelector("#busInfoContent");
   const legs = response.routes[0].legs;
 
+  busInfoElement.style.backgroundColor = 'white';
+  busInfoElement.style.padding = '16px';
+
   let busInfoHTML = "";
 
   for (const leg of legs) {
@@ -426,6 +429,7 @@ function displayBusInfo(response) {
 
   // Show the toggleBusInfo button once the route information is available
   document.querySelector("#toggleBusInfo").style.display = "block";
+  document.querySelector("#toggleBusInfo").style.marginBottom = "1rem";
   }
 
   document.querySelector("#toggleBusInfo").addEventListener("click", () => {

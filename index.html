@@ -11,16 +11,21 @@
     <meta property="og:image" content="">
     <title>Kuopio Public Transport</title>
     <link rel="stylesheet" href="styles.css">
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
 </head>
 
 <body>
     <header>
-        <h1>Kuopio Public Transport</h1>
+        <!-- <h1>Kuopio Public Transport</h1> -->
+
         <div class="input-container">
+            <a href="https://vilkku.kuopio.fi/">
+                <img src="img/Vilkku_sydan_violetti.png" alt="Vilkku logo" id="vilkku-logo">
+            </a>
             <input id="start" type="text" placeholder="Starting Point" />
             <input id="end" type="text" placeholder="Destination" />
             <button id="routeBtn" onclick="onButtonClick()">Get Bus Route</button>
-            <button id="useCurrentLocation">Use Current Location</button>
+            <button id="useCurrentLocation"><i class="material-icons">edit_location</i></button>
         </div>
         <div id="busInfo">
             <button id="toggleBusInfo">Show/Hide Bus Info</button>
