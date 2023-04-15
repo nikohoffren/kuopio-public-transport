@@ -8,26 +8,8 @@ let startAutocomplete;
 let endAutocomplete;
 let startInput;
 let endInput;
-let settingOrigin = false;
 
-function getCurrentPosition() {
-  return new Promise((resolve, reject) => {
-    if (navigator.geolocation) {
-      navigator.geolocation.getCurrentPosition(
-        (position) => {
-          const lat = position.coords.latitude;
-          const lng = position.coords.longitude;
-          resolve({ lat, lng });
-        },
-        (error) => {
-          reject(error);
-        }
-      );
-    } else {
-      reject(new Error("Geolocation is not supported by this browser."));
-    }
-  });
-}
+const locationSetter = new LocationSetter();
 
 export async function initMap() {
   const { Map } = await google.maps.importLibrary("maps", "places");
@@ -51,8 +33,6 @@ export async function initMap() {
     },
     mapId: config.GOOGLE_MAPS_MAP_ID,
   });
-
-  const locationSetter = new LocationSetter();
 
   class BlinkingCircleOverlay extends google.maps.OverlayView {
     constructor(position, map) {
@@ -268,26 +248,15 @@ export async function initMap() {
   startInput = document.getElementById("start");
   endInput = document.getElementById("end");
 
-  locationSetter.setOrigin();
+  startInput.addEventListener("focus", () => {
+    locationSetter.setOrigin();
+  });
 
-  function setUserLocation() {
-    if (navigator.geolocation) {
-      navigator.geolocation.getCurrentPosition((position) => {
-        const userLocation = new google.maps.LatLng(
-          position.coords.latitude,
-          position.coords.longitude
-        );
-        if (locationSetter.isSettingOrigin()) {
-          startInput.value = `lat: ${userLocation.lat().toFixed(6)}, lng: ${userLocation.lng().toFixed(6)}`;
-        } else {
-          endInput.value = `lat: ${userLocation.lat().toFixed(6)}, lng: ${userLocation.lng().toFixed(6)}`;
-        }
-      });
-    } else {
-      console.log("Geolocation is not supported by this browser.");
-    }
-  }
-  setUserLocation();
+  endInput.addEventListener("focus", () => {
+    locationSetter.setDestination();
+  });
+
+  locationSetter.setOrigin();
 
   startAutocomplete = new google.maps.places.Autocomplete(startInput);
   endAutocomplete = new google.maps.places.Autocomplete(endInput);
@@ -318,7 +287,6 @@ export async function initMap() {
     } else {
       endInput.value = `lat: ${location.lat().toFixed(6)}, lng: ${location.lng().toFixed(6)}`;
     }
-    locationSetter.isSettingOrigin() = false;
   });
 
   updateBusPositions();
@@ -430,44 +398,74 @@ function displayBusInfo(response) {
   // Show the toggleBusInfo button once the route information is available
   document.querySelector("#toggleBusInfo").style.display = "block";
   document.querySelector("#toggleBusInfo").style.marginBottom = "1rem";
-  }
+}
 
-  document.querySelector("#toggleBusInfo").addEventListener("click", () => {
-    const busInfoContent = document.querySelector("#busInfoContent");
-    busInfoContent.style.display = busInfoContent.style.display === "none" ? "block" : "none";
-  });
-
-  document.querySelector("#toggleBusInfo").style.display = "none";
+document.querySelector("#toggleBusInfo").addEventListener("click", () => {
   const busInfoContent = document.querySelector("#busInfoContent");
-  busInfoContent.style.display = "block";
+  busInfoContent.style.display = busInfoContent.style.display === "none" ? "block" : "none";
+});
 
-  export async function onButtonClick() {
+document.querySelector("#toggleBusInfo").style.display = "none";
+const busInfoContent = document.querySelector("#busInfoContent");
+busInfoContent.style.display = "block";
+
+export async function onButtonClick() {
+  const originValue = startInput.value;
+  const destinationValue = endInput.value;
+
+  let origin, destination;
+
+  const latLngRegex = /^lat:\s*(-?\d+(\.\d+)?),\s*lng:\s*(-?\d+(\.\d+)?)$/;
+
+  if (latLngRegex.test(originValue)) {
+    const [, lat, , lng] = originValue.match(latLngRegex);
+    origin = new google.maps.LatLng(parseFloat(lat), parseFloat(lng));
+  } else {
     const originPlace = startAutocomplete.getPlace();
-    const destinationPlace = endAutocomplete.getPlace();
-
-    if (!originPlace || !originPlace.geometry || !destinationPlace || !destinationPlace.geometry) {
-      alert("Please select valid origin and destination locations.");
+    if (!originPlace || !originPlace.geometry) {
+      alert("Please select a valid origin location.");
       return;
     }
-
-    const origin = originPlace.geometry.location;
-    const destination = destinationPlace.geometry.location;
-
-    startInput.addEventListener("focus", () => {
-      locationSetter.setOrigin();
-    });
-
-    endInput.addEventListener("focus", () => {
-      locationSetter.setDestination();
-    });
-
-
-    calculateRoute(origin, destination);
+    origin = originPlace.geometry.location;
   }
 
-  document.getElementById("routeBtn").addEventListener("click", onButtonClick);
+  if (latLngRegex.test(destinationValue)) {
+    const [, lat, , lng] = destinationValue.match(latLngRegex);
+    destination = new google.maps.LatLng(parseFloat(lat), parseFloat(lng));
+  } else {
+    const destinationPlace = endAutocomplete.getPlace();
+    if (!destinationPlace || !destinationPlace.geometry) {
+      alert("Please select a valid destination location.");
+      return;
+    }
+    destination = destinationPlace.geometry.location;
+  }
 
-document.getElementById('useCurrentLocation').addEventListener('click', insertCurrentLocation);
+  calculateRoute(origin, destination);
+}
+
+
+function getCurrentPosition() {
+  return new Promise((resolve, reject) => {
+    navigator.geolocation.getCurrentPosition(
+      (position) => {
+        resolve({
+          lat: position.coords.latitude,
+          lng: position.coords.longitude,
+        });
+      },
+      (error) => reject(error),
+      {
+        enableHighAccuracy: true,
+        timeout: 5000,
+        maximumAge: 0,
+      }
+    );
+  });
+}
+
+
+document.getElementById("routeBtn").addEventListener("click", onButtonClick);
 
 async function insertCurrentLocation() {
   try {
@@ -475,7 +473,7 @@ async function insertCurrentLocation() {
     const location = new google.maps.LatLng(position.lat, position.lng);
     const locationString = `lat: ${position.lat.toFixed(6)}, lng: ${position.lng.toFixed(6)}`;
 
-    if (settingOrigin) {
+    if (locationSetter.isSettingOrigin()) {
       startInput.value = locationString;
       startAutocomplete.set('place', { geometry: { location: location } });
     } else {
@@ -503,6 +501,8 @@ window.addEventListener("resize", () => {
     },
   });
 });
+
+document.querySelector('#useCurrentLocation').addEventListener('click', insertCurrentLocation);
 
 async function fetchConfig() {
   const response = await fetch("/config");
