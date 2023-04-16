@@ -127,9 +127,9 @@ export async function initMap() {
 
                     const infoWindow = new google.maps.InfoWindow({
                         //* converting the bus speed from m/s to km/h
-                        content: `Speed: ${(bus.position.speed * 3.6).toFixed(
+                        content: `Nopeus: ${(bus.position.speed * 3.6).toFixed(
                             2
-                        )} km/h.<br>Route: ${bus.trip.routeId}<br>Trip: ${
+                        )} km/h.<br>Linja: ${bus.trip.routeId}<br>Reitti: ${
                             bus.vehicle.label
                         }`,
                     });
@@ -156,9 +156,9 @@ export async function initMap() {
 
                     const infoWindow = busData[busId].infoWindow;
                     infoWindow.setContent(
-                        `Speed: ${(bus.position.speed * 3.6).toFixed(
+                        `Nopeus: ${(bus.position.speed * 3.6).toFixed(
                             2
-                        )} km/h.<br>Route: ${bus.trip.routeId}<br>Trip: ${
+                        )} km/h.<br>Linja: ${bus.trip.routeId}<br>Reitti: ${
                             bus.vehicle.label
                         }`
                     );
@@ -448,7 +448,7 @@ function calculateRoute(origin, destination) {
                 directionsRenderer.setDirections(response);
                 displayBusInfo(response);
             } else {
-                window.alert("No routes available. Error: " + status);
+                window.alert("Ei löydettyjä reittejä. Virhe: " + status);
             }
         }
     );
@@ -476,12 +476,12 @@ function displayBusInfo(response) {
                     step.transit.departure_time.real_value;
 
                 busInfoHTML += `<p>
-                          Line: ${lineName}<br>
-                          Departure: ${departureTime}<br>
-                          Arrival: ${arrivalTime}<br>
-                          Travel Time: ${step.duration.text}<br>
-                          Delay: ${
-                              delay > 0 ? `${delay} minutes late` : "On time"
+                          Linja: ${lineName}<br>
+                          Lähtöaika: ${departureTime}<br>
+                          Saapumisaika: ${arrivalTime}<br>
+                          Matka-aika: ${step.duration.text}<br>
+                          Viive: ${
+                              delay > 0 ? `${delay} minuuttia myöhässä` : "Ajallaan"
                           }
                           <br><br>
                         </p>`;
@@ -489,7 +489,7 @@ function displayBusInfo(response) {
         }
     }
 
-    busInfoHTML += `<p><a href="https://vilkku.kuopio.fi/" target="_blank" class="link">Buy a ticket</a></p>`;
+    busInfoHTML += `<p><a href="https://vilkku.kuopio.fi/" target="_blank" class="link">Osta lippu</a></p>`;
     busInfoElement.innerHTML = busInfoHTML;
 
     //* Show the toggleBusInfo button once the route information is available
@@ -522,7 +522,7 @@ export async function onButtonClick() {
     } else {
         const originPlace = startAutocomplete.getPlace();
         if (!originPlace || !originPlace.geometry) {
-            alert("Please select a valid origin location.");
+            alert("Valitse olemassa oleva lähtöpaikka.");
             return;
         }
         origin = originPlace.geometry.location;
@@ -534,7 +534,7 @@ export async function onButtonClick() {
     } else {
         const destinationPlace = endAutocomplete.getPlace();
         if (!destinationPlace || !destinationPlace.geometry) {
-            alert("Please select a valid destination location.");
+            alert("Valitse olemassa oleva saapumispaikka.");
             return;
         }
         destination = destinationPlace.geometry.location;
