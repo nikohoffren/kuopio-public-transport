@@ -1,6 +1,7 @@
 import LocationSetter from "./LocationSetter.js";
 
 let map;
+let userMarker;
 let config;
 let directionsService;
 let directionsRenderer;
@@ -71,17 +72,6 @@ export async function initMap() {
                 this.div.parentNode.removeChild(this.div);
                 this.div = null;
             }
-        }
-    }
-
-    async function addUserLocationToMap() {
-        try {
-            const position = await getCurrentPosition();
-            //* create an instance of the BlinkingCircleOverlay class, it is working even it seems not to be used
-            const circleOverlay = new BlinkingCircleOverlay(position, map);
-            map.panTo(position);
-        } catch (error) {
-            console.error("Error getting user location:", error);
         }
     }
 
@@ -268,7 +258,6 @@ export async function initMap() {
     }
 
     fetchAndDisplayVilkkuBicycles();
-    addUserLocationToMap();
 
     function updateBusPositions() {
         fetchAndDisplayBusLocations().then(() => {
@@ -416,7 +405,7 @@ function defineLabelOverlay() {
             }
         }
 
-        // Add this method to update the position
+        //* update the position
         updatePosition(position) {
             this.position = position;
             if (this.div) {
@@ -543,47 +532,41 @@ export async function onButtonClick() {
     calculateRoute(origin, destination);
 }
 
-function getCurrentPosition() {
-    return new Promise((resolve, reject) => {
-        navigator.geolocation.getCurrentPosition(
-            (position) => {
-                resolve({
-                    lat: position.coords.latitude,
-                    lng: position.coords.longitude,
-                });
-            },
-            (error) => reject(error),
-            {
-                enableHighAccuracy: true,
-                timeout: 5000,
-                maximumAge: 0,
-            }
-        );
-    });
-}
-
 document.getElementById("routeBtn").addEventListener("click", onButtonClick);
 
-async function insertCurrentLocation() {
-    try {
-        const position = await getCurrentPosition();
-        const location = new google.maps.LatLng(position.lat, position.lng);
-        const locationString = `lat: ${position.lat.toFixed(
-            6
-        )}, lng: ${position.lng.toFixed(6)}`;
+function getUserLocation() {
+  if (navigator.geolocation) {
+    navigator.geolocation.getCurrentPosition(
+      (position) => {
+        const pos = {
+          lat: position.coords.latitude,
+          lng: position.coords.longitude,
+        };
 
-        if (locationSetter.isSettingOrigin()) {
-            startInput.value = locationString;
-            startAutocomplete.set("place", {
-                geometry: { location: location },
-            });
-        } else {
-            endInput.value = locationString;
-            endAutocomplete.set("place", { geometry: { location: location } });
+        if (userMarker) {
+            //* remove the previous user marker if it exists
+          userMarker.setMap(null);
         }
-    } catch (error) {
-        console.error("Error getting user location:", error);
-    }
+
+        userMarker = new google.maps.Marker({
+          position: pos,
+          map: map,
+          title: "Your location",
+          icon: {
+            url: "http://maps.google.com/mapfiles/ms/icons/blue-dot.png",
+          },
+        });
+
+        map.setCenter(pos);
+      },
+      () => {
+        handleLocationError(true, infoWindow, map.getCenter());
+      }
+    );
+  } else {
+    //* Browser doesn't support Geolocation
+    handleLocationError(false, infoWindow, map.getCenter());
+  }
 }
 
 window.addEventListener("resize", () => {
@@ -605,7 +588,7 @@ window.addEventListener("resize", () => {
 
 document
     .querySelector("#useCurrentLocation")
-    .addEventListener("click", insertCurrentLocation);
+    .addEventListener("click", getUserLocation);
 
 async function fetchConfig() {
     const response = await fetch("/config");
