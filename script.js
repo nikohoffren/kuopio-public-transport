@@ -147,6 +147,27 @@ export async function initMap() {
     }
   }
 
+  async function fetchAndDisplayServiceAlerts() {
+    try {
+      const apiUrl =
+        window.location.hostname === "localhost"
+          ? "http://localhost:3999/api/servicealerts"
+          : "/api/servicealerts";
+
+      const response = await fetch(apiUrl);
+
+      if (!response.ok) {
+        throw new Error(`API request failed with status ${response.status}`);
+      }
+
+      // Process and display the service alerts
+      const data = await response.json();
+      console.log("Service alerts:", data);
+    } catch (error) {
+      console.error("Error fetching service alerts:", error);
+    }
+  }
+
   async function fetchAndDisplayVilkkuBicycles() {
     const apiUrl = "/.netlify/functions/vilkkuBicycles";
 
@@ -198,6 +219,12 @@ export async function initMap() {
   function updateBusPositions() {
     fetchAndDisplayBusLocations().then(() => {
       setTimeout(updateBusPositions, 2000); // 2000 milliseconds (2 seconds)
+    });
+  }
+
+  function updateServiceAlerts() {
+    fetchAndDisplayServiceAlerts().then(() => {
+      setTimeout(updateServiceAlerts, 60000);
     });
   }
 
@@ -290,6 +317,7 @@ export async function initMap() {
   });
 
   updateBusPositions();
+  updateServiceAlerts();
 }
 
 function defineLabelOverlay() {

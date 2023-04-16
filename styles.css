@@ -36,8 +36,9 @@ header {
 }
 
 #vilkku-logo {
-    width: 2.5em;
-    height: 1.5rem;
+    width: 6em;
+    height: 1rem;
+    border-radius: 5%;
 }
 
 a > #vilkku-logo {
