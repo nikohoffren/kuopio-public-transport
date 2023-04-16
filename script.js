@@ -1,4 +1,4 @@
-import LocationSetter from './LocationSetter.js';
+import LocationSetter from "./LocationSetter.js";
 
 let map;
 let config;
@@ -99,13 +99,16 @@ export async function initMap() {
         throw new Error(`API request failed with status ${response.status}`);
       }
 
-      // Process and display the bus locations on the map
+      //* Process and display the bus locations on the map
       const data = await response.json();
       console.log("Vilkku bus data:", data);
 
       for (const busEntity of data.entity) {
         const bus = busEntity.vehicle;
-        const position = { lat: bus.position.latitude, lng: bus.position.longitude };
+        const position = {
+          lat: bus.position.latitude,
+          lng: bus.position.longitude,
+        };
         const busId = bus.vehicle.id;
 
         if (!busData[busId]) {
@@ -113,14 +116,18 @@ export async function initMap() {
             position: position,
             map: map,
             icon: {
-              url: 'img/bus-stop-icon.png',
+              url: "img/bus-stop-icon.png",
               scaledSize: new google.maps.Size(30, 30),
             },
           });
 
           const infoWindow = new google.maps.InfoWindow({
             //* converting the bus speed from m/s to km/h
-            content: `Speed: ${(bus.position.speed * 3.6).toFixed(2)} km/h.<br>Route: ${bus.trip.routeId}<br>Trip: ${bus.vehicle.label}`,
+            content: `Speed: ${(bus.position.speed * 3.6).toFixed(
+              2
+            )} km/h.<br>Route: ${bus.trip.routeId}<br>Trip: ${
+              bus.vehicle.label
+            }`,
           });
 
           busMarker.addListener("click", () => {
@@ -130,13 +137,21 @@ export async function initMap() {
           const busNumber = busEntity.vehicle.trip.routeId;
           const labelOverlay = new LabelOverlay(position, busNumber, map);
 
-          busData[busId] = { marker: busMarker, infoWindow: infoWindow, labelOverlay: labelOverlay };
+          busData[busId] = {
+            marker: busMarker,
+            infoWindow: infoWindow,
+            labelOverlay: labelOverlay,
+          };
         } else {
           const busMarker = busData[busId].marker;
           busMarker.setPosition(position);
 
           const infoWindow = busData[busId].infoWindow;
-          infoWindow.setContent(`Speed: ${(bus.position.speed * 3.6).toFixed(2)} km/h.<br>Route: ${bus.trip.routeId}<br>Trip: ${bus.vehicle.label}`);
+          infoWindow.setContent(
+            `Speed: ${(bus.position.speed * 3.6).toFixed(2)} km/h.<br>Route: ${
+              bus.trip.routeId
+            }<br>Trip: ${bus.vehicle.label}`
+          );
 
           const labelOverlay = busData[busId].labelOverlay;
           labelOverlay.updatePosition(position);
@@ -160,11 +175,32 @@ export async function initMap() {
         throw new Error(`API request failed with status ${response.status}`);
       }
 
-      // Process and display the service alerts
+      //* Process and display the service alerts
       const data = await response.json();
       console.log("Service alerts:", data);
     } catch (error) {
       console.error("Error fetching service alerts:", error);
+    }
+  }
+
+  async function fetchAndDisplayTripUpdates() {
+    try {
+      const apiUrl =
+        window.location.hostname === "localhost"
+          ? "http://localhost:3999/api/tripupdates"
+          : "/api/tripupdates";
+
+      const response = await fetch(apiUrl);
+
+      if (!response.ok) {
+        throw new Error(`API request failed with status ${response.status}`);
+      }
+
+      //* Process and display the trip updates
+      const data = await response.json();
+      console.log("Trip updates:", data);
+    } catch (error) {
+      console.error("Error fetching trip updates:", error);
     }
   }
 
@@ -201,7 +237,9 @@ export async function initMap() {
         });
 
         const infoWindow = new google.maps.InfoWindow({
-          content: `${station.getAttribute("name")}: ${station.getAttribute("bikes")} bikes available`,
+          content: `${station.getAttribute("name")}: ${station.getAttribute(
+            "bikes"
+          )} bikes available`,
         });
 
         marker.addListener("click", () => {
@@ -218,13 +256,19 @@ export async function initMap() {
 
   function updateBusPositions() {
     fetchAndDisplayBusLocations().then(() => {
-      setTimeout(updateBusPositions, 2000); // 2000 milliseconds (2 seconds)
+      setTimeout(updateBusPositions, 2000);
     });
   }
 
   function updateServiceAlerts() {
     fetchAndDisplayServiceAlerts().then(() => {
       setTimeout(updateServiceAlerts, 60000);
+    });
+  }
+
+  function updateTripUpdates() {
+    fetchAndDisplayTripUpdates().then(() => {
+      setTimeout(updateTripUpdates, 60000);
     });
   }
 
@@ -260,7 +304,6 @@ export async function initMap() {
         url: currMarker[3],
         scaledSize: new google.maps.Size(currMarker[4], currMarker[5]),
       },
-
     });
 
     const infowindow = new google.maps.InfoWindow({
@@ -302,22 +345,27 @@ export async function initMap() {
   });
 
   map.addListener("bounds_changed", () => {
-  const newBounds = map.getBounds();
-  startAutocomplete.setBounds(newBounds);
-  endAutocomplete.setBounds(newBounds);
+    const newBounds = map.getBounds();
+    startAutocomplete.setBounds(newBounds);
+    endAutocomplete.setBounds(newBounds);
   });
 
   map.addListener("click", (e) => {
     const location = e.latLng;
     if (locationSetter.isSettingOrigin()) {
-      startInput.value = `lat: ${location.lat().toFixed(6)}, lng: ${location.lng().toFixed(6)}`;
+      startInput.value = `lat: ${location.lat().toFixed(6)}, lng: ${location
+        .lng()
+        .toFixed(6)}`;
     } else {
-      endInput.value = `lat: ${location.lat().toFixed(6)}, lng: ${location.lng().toFixed(6)}`;
+      endInput.value = `lat: ${location.lat().toFixed(6)}, lng: ${location
+        .lng()
+        .toFixed(6)}`;
     }
   });
 
   updateBusPositions();
   updateServiceAlerts();
+  updateTripUpdates();
 }
 
 function defineLabelOverlay() {
@@ -399,8 +447,8 @@ function displayBusInfo(response) {
   const busInfoElement = document.querySelector("#busInfoContent");
   const legs = response.routes[0].legs;
 
-  busInfoElement.style.backgroundColor = 'white';
-  busInfoElement.style.padding = '16px';
+  busInfoElement.style.backgroundColor = "white";
+  busInfoElement.style.padding = "16px";
 
   let busInfoHTML = "";
 
@@ -410,14 +458,18 @@ function displayBusInfo(response) {
         const arrivalTime = step.transit.arrival_time.text;
         const departureTime = step.transit.departure_time.text;
         const lineName = step.transit.line.short_name || step.transit.line.name;
-        const delay = step.transit.departure_time.value - step.transit.departure_time.real_value;
+        const delay =
+          step.transit.departure_time.value -
+          step.transit.departure_time.real_value;
 
         busInfoHTML += `<p>
                           Line: ${lineName}<br>
                           Departure: ${departureTime}<br>
                           Arrival: ${arrivalTime}<br>
                           Travel Time: ${step.duration.text}<br>
-                          Delay: ${delay > 0 ? `${delay} minutes late` : "On time"}
+                          Delay: ${
+                            delay > 0 ? `${delay} minutes late` : "On time"
+                          }
                         </p>`;
       }
     }
@@ -432,7 +484,8 @@ function displayBusInfo(response) {
 
 document.querySelector("#toggleBusInfo").addEventListener("click", () => {
   const busInfoContent = document.querySelector("#busInfoContent");
-  busInfoContent.style.display = busInfoContent.style.display === "none" ? "block" : "none";
+  busInfoContent.style.display =
+    busInfoContent.style.display === "none" ? "block" : "none";
 });
 
 document.querySelector("#toggleBusInfo").style.display = "none";
@@ -474,7 +527,6 @@ export async function onButtonClick() {
   calculateRoute(origin, destination);
 }
 
-
 function getCurrentPosition() {
   return new Promise((resolve, reject) => {
     navigator.geolocation.getCurrentPosition(
@@ -494,24 +546,25 @@ function getCurrentPosition() {
   });
 }
 
-
 document.getElementById("routeBtn").addEventListener("click", onButtonClick);
 
 async function insertCurrentLocation() {
   try {
     const position = await getCurrentPosition();
     const location = new google.maps.LatLng(position.lat, position.lng);
-    const locationString = `lat: ${position.lat.toFixed(6)}, lng: ${position.lng.toFixed(6)}`;
+    const locationString = `lat: ${position.lat.toFixed(
+      6
+    )}, lng: ${position.lng.toFixed(6)}`;
 
     if (locationSetter.isSettingOrigin()) {
       startInput.value = locationString;
-      startAutocomplete.set('place', { geometry: { location: location } });
+      startAutocomplete.set("place", { geometry: { location: location } });
     } else {
       endInput.value = locationString;
-      endAutocomplete.set('place', { geometry: { location: location } });
+      endAutocomplete.set("place", { geometry: { location: location } });
     }
   } catch (error) {
-    console.error('Error getting user location:', error);
+    console.error("Error getting user location:", error);
   }
 }
 
@@ -532,7 +585,9 @@ window.addEventListener("resize", () => {
   });
 });
 
-document.querySelector('#useCurrentLocation').addEventListener('click', insertCurrentLocation);
+document
+  .querySelector("#useCurrentLocation")
+  .addEventListener("click", insertCurrentLocation);
 
 async function fetchConfig() {
   const response = await fetch("/config");
