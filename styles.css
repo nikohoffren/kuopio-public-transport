@@ -25,24 +25,25 @@ header {
     display: flex;
     flex-direction: column;
     align-items: center;
-    padding: 0.8rem;
+    padding-left: 0.8rem;
+    padding-right: 0.8rem;
+    padding-top: 0.7rem;
+    padding-bottom: 0.5rem;
     position: absolute;
     top: 1rem;
     left: 1rem;
-    padding-bottom: 0;
     z-index: 1;
     border-radius: 5px;
     box-shadow: 0 2px 6px rgba(0, 0, 0, 0.3);
 }
 
 #vilkku-logo {
-    width: 6em;
-    height: 1rem;
-    border-radius: 5%;
+    width: 7rem;
+    border-radius: 5px;
 }
 
 a > #vilkku-logo {
-    height: 100%;
+    height: 90%;
 }
 
 @media (max-width: 650px) {
@@ -62,6 +63,7 @@ h1 {
 .input-container {
     display: flex;
     gap: 0.5rem;
+
 }
 
 @media (max-width: 800px) {
@@ -75,9 +77,11 @@ input[type="text"] {
     border-radius: 5px;
     border: 1px solid #ccc;
     width: 200px;
+    height: 40px;
 }
 
 button {
+    height: 40px;
     padding: 0.5rem 1rem;
     border-radius: 5px;
     border: none;
@@ -99,12 +103,21 @@ button:hover {
     background-color: rgb(163, 0, 0);
 }
 
-#busInfo {
-    margin-top: 1rem;
-    text-align: center;
+#busInfoContent {
+    display: none;
 }
 
-#busInfoContent {
+#busInfo {
+    position: absolute;
+    top: 5rem;
+    left: 1rem;
+    text-align: center;
+    background-color: rgba(153, 36, 255, 0.4);
+    border-radius: 5px;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.3);
+    padding: 0.8rem;
+    padding-bottom: 0;
+    z-index: 1;
     display: none;
 }
 

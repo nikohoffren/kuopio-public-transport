@@ -1,12 +1,10 @@
-<!-- USE BASH COMMANDS IN THIS PROJECT -->
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta property="og:title" content="Kuopio Public Transport App">
+    <meta property="og:title" content="Kuopio Public Transport">
     <meta property="og:description" content="Find all the busses/bus routes, Vilkku-bicycles and Biketaxis in Kuopio/Siilinjärvi region">
     <meta property="og:image" content="">
     <title>Kuopio Public Transport</title>
@@ -16,22 +14,21 @@
 
 <body>
     <header>
-        <!-- <h1>Kuopio Public Transport</h1> -->
-
         <div class="input-container">
             <a href="https://vilkku.kuopio.fi/">
                 <img src="img/vilkku.jpg" alt="Vilkku logo" id="vilkku-logo">
             </a>
             <input id="start" type="text" placeholder="Starting Point" />
             <input id="end" type="text" placeholder="Destination" />
-            <button id="routeBtn" onclick="onButtonClick()">Get Bus Route</button>
+            <button id="routeBtn" onclick="onButtonClick()">Search</button>
             <button id="useCurrentLocation"><i class="material-icons">edit_location</i></button>
         </div>
-        <div id="busInfo">
-            <button id="toggleBusInfo">Show/Hide Bus Info</button>
-            <div id="busInfoContent"></div>
-        </div>
     </header>
+
+    <div id="busInfo">
+        <button id="toggleBusInfo"><i class="material-icons">dehaze</i></button>
+        <div id="busInfoContent"></div>
+    </div>
 
     <div id="map"></div>
 

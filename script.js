@@ -468,6 +468,7 @@ function displayBusInfo(response) {
 
     busInfoElement.style.backgroundColor = "white";
     busInfoElement.style.padding = "16px";
+    busInfoElement.style.marginBottom = "10px";
 
     let busInfoHTML = "";
 
@@ -497,9 +498,10 @@ function displayBusInfo(response) {
 
     busInfoElement.innerHTML = busInfoHTML;
 
-    // Show the toggleBusInfo button once the route information is available
+    //* Show the toggleBusInfo button once the route information is available
     document.querySelector("#toggleBusInfo").style.display = "block";
     document.querySelector("#toggleBusInfo").style.marginBottom = "1rem";
+    document.querySelector("#busInfo").style.display = "block";
 }
 
 document.querySelector("#toggleBusInfo").addEventListener("click", () => {
