@@ -57,7 +57,23 @@ a > #vilkku-logo {
 
 h1 {
     font-size: 1.2rem;
+}
 
+.link {
+    text-decoration: none;
+    height: 40px;
+    padding: 0.5rem 1rem;
+    border-radius: 5px;
+    border: none;
+    background-color: #4c7af7;
+    color: white;
+    cursor: pointer;
+    font-weight: bold;
+    transition: background-color 0.3s;
+}
+
+.link:hover {
+    background-color: #3a63d3;
 }
 
 .input-container {

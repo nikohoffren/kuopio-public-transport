@@ -297,18 +297,10 @@ export async function initMap() {
             "Bike Taxi Kuopio",
             62.892575633523094,
             27.696424354781517,
-            "img/biketaxi-kuopio.jpeg",
+            "img/biketaxi-kuopio.png",
             40,
             40,
         ],
-        // [
-        //   "Vilkku Fillarit",
-        //   62.89532713579455,
-        //   27.67992516359851,
-        //   "img/vilkku-bicycle-icon.jpg",
-        //   40,
-        //   40,
-        // ],
     ];
 
     for (let currMarker of markers) {
@@ -491,11 +483,13 @@ function displayBusInfo(response) {
                           Delay: ${
                               delay > 0 ? `${delay} minutes late` : "On time"
                           }
+                          <br><br>
                         </p>`;
             }
         }
     }
 
+    busInfoHTML += `<p><a href="https://vilkku.kuopio.fi/" target="_blank" class="link">Buy a ticket</a></p>`;
     busInfoElement.innerHTML = busInfoHTML;
 
     //* Show the toggleBusInfo button once the route information is available
