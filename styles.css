@@ -1,6 +1,7 @@
 :root {
     --bg-color-white: rgb(236, 235, 235);
     --bg-color-black: rgb(12, 12, 12);
+    --bg-color-purple: #564095;
     --ft-color-white: rgb(237, 235, 235);
     --ft-color-black: rgb(12, 12, 12);
     --ft-primary: 'Cuprum', sans-serif;
@@ -21,7 +22,7 @@ body {
 }
 
 header {
-    background-color: rgba(153, 36, 255, 0.4);
+    background-color: var(--bg-color-purple);
     display: flex;
     flex-direction: column;
     align-items: center;
@@ -128,7 +129,7 @@ button:hover {
     top: 5rem;
     left: 1rem;
     text-align: center;
-    background-color: rgba(153, 36, 255, 0.4);
+    background-color: var(--bg-color-purple);
     border-radius: 5px;
     box-shadow: 0 2px 6px rgba(0, 0, 0, 0.3);
     padding: 0.8rem;

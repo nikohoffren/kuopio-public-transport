@@ -105,7 +105,7 @@ export async function initMap() {
 
             //* Process and display the bus locations on the map
             const data = await response.json();
-            console.log("Vilkku bus data:", data);
+            // console.log("Vilkku bus data:", data);
 
             for (const busEntity of data.entity) {
                 const bus = busEntity.vehicle;
@@ -212,7 +212,7 @@ export async function initMap() {
 
             //* Process and display the trip updates
             const data = await response.json();
-            console.log("Trip updates:", data);
+            // console.log("Trip updates:", data);
         } catch (error) {
             console.error("Error fetching trip updates:", error);
         }
@@ -294,7 +294,7 @@ export async function initMap() {
 
     const markers = [
         [
-            "Bike Taxi Kuopio",
+            `Bike Taxi Kuopio<br>Soita ja tilaa: 044 4410 520<br><a href="https://www.biketaxi.fi/hinnasto/?kaupunki=kuopio" target="_blank">www.biketaxi.fi</a>`,
             62.892575633523094,
             27.696424354781517,
             "img/biketaxi-kuopio.png",
