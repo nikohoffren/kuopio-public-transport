@@ -347,16 +347,14 @@ export async function initMap() {
         endAutocomplete.setBounds(newBounds);
     });
 
-    map.addListener("click", (e) => {
+    map.addListener("click", async (e) => {
         const location = e.latLng;
+        const address = await reverseGeocode(location.lat(), location.lng());
+
         if (locationSetter.isSettingOrigin()) {
-            startInput.value = `lat: ${location
-                .lat()
-                .toFixed(6)}, lng: ${location.lng().toFixed(6)}`;
+            startInput.value = address;
         } else {
-            endInput.value = `lat: ${location.lat().toFixed(6)}, lng: ${location
-                .lng()
-                .toFixed(6)}`;
+            endInput.value = address;
         }
     });
 
@@ -470,7 +468,9 @@ function displayBusInfo(response) {
                           Saapumisaika: ${arrivalTime}<br>
                           Matka-aika: ${step.duration.text}<br>
                           Viive: ${
-                              delay > 0 ? `${delay} minuuttia myöhässä` : "Ajallaan"
+                              delay > 0
+                                  ? `${delay} minuuttia myöhässä`
+                                  : "Ajallaan"
                           }
                           <br><br>
                         </p>`;
@@ -497,6 +497,24 @@ document.querySelector("#toggleBusInfo").style.display = "none";
 const busInfoContent = document.querySelector("#busInfoContent");
 busInfoContent.style.display = "block";
 
+async function geocodeAddress(address) {
+    const geocoder = new google.maps.Geocoder();
+    return new Promise((resolve, reject) => {
+        geocoder.geocode({ address: address }, (results, status) => {
+            if (status === "OK") {
+                resolve(results[0].geometry.location);
+            } else {
+                reject(
+                    new Error(
+                        "Geocode was not successful for the following reason: " +
+                            status
+                    )
+                );
+            }
+        });
+    });
+}
+
 export async function onButtonClick() {
     const originValue = startInput.value;
     const destinationValue = endInput.value;
@@ -509,64 +527,91 @@ export async function onButtonClick() {
         const [, lat, , lng] = originValue.match(latLngRegex);
         origin = new google.maps.LatLng(parseFloat(lat), parseFloat(lng));
     } else {
-        const originPlace = startAutocomplete.getPlace();
-        if (!originPlace || !originPlace.geometry) {
+        try {
+            origin = await geocodeAddress(originValue);
+        } catch (error) {
             alert("Valitse olemassa oleva lähtöpaikka.");
             return;
         }
-        origin = originPlace.geometry.location;
     }
 
     if (latLngRegex.test(destinationValue)) {
         const [, lat, , lng] = destinationValue.match(latLngRegex);
         destination = new google.maps.LatLng(parseFloat(lat), parseFloat(lng));
     } else {
-        const destinationPlace = endAutocomplete.getPlace();
-        if (!destinationPlace || !destinationPlace.geometry) {
+        try {
+            destination = await geocodeAddress(destinationValue);
+        } catch (error) {
             alert("Valitse olemassa oleva saapumispaikka.");
             return;
         }
-        destination = destinationPlace.geometry.location;
     }
 
     calculateRoute(origin, destination);
 }
 
-document.getElementById("routeBtn").addEventListener("click", onButtonClick);
+window.onButtonClick = onButtonClick;
+
+async function reverseGeocode(lat, lng) {
+    const geocoder = new google.maps.Geocoder();
+    const latLng = new google.maps.LatLng(lat, lng);
+    return new Promise((resolve, reject) => {
+        geocoder.geocode({ location: latLng }, (results, status) => {
+            if (status === google.maps.GeocoderStatus.OK) {
+                if (results[0]) {
+                    resolve(results[0].formatted_address);
+                } else {
+                    resolve("Valittu sijainti");
+                }
+            } else {
+                reject(new Error("Geocoder failed due to: " + status));
+            }
+        });
+    });
+}
 
 function getUserLocation() {
-  if (navigator.geolocation) {
-    navigator.geolocation.getCurrentPosition(
-      (position) => {
-        const pos = {
-          lat: position.coords.latitude,
-          lng: position.coords.longitude,
-        };
+    if (navigator.geolocation) {
+        navigator.geolocation.getCurrentPosition(
+            (position) => {
+                const pos = {
+                    lat: position.coords.latitude,
+                    lng: position.coords.longitude,
+                };
+                //* remove the previous user marker if it exists
+                if (userMarker) {
+                    userMarker.setMap(null);
+                }
 
-        if (userMarker) {
-            //* remove the previous user marker if it exists
-          userMarker.setMap(null);
-        }
+                userMarker = new google.maps.Marker({
+                    position: pos,
+                    map: map,
+                    title: "Sijaintisi",
+                    icon: {
+                        url: "http://maps.google.com/mapfiles/ms/icons/blue-dot.png",
+                    },
+                });
+                map.setCenter(pos);
 
-        userMarker = new google.maps.Marker({
-          position: pos,
-          map: map,
-          title: "Your location",
-          icon: {
-            url: "http://maps.google.com/mapfiles/ms/icons/blue-dot.png",
-          },
-        });
-
-        map.setCenter(pos);
-      },
-      () => {
-        handleLocationError(true, infoWindow, map.getCenter());
-      }
-    );
-  } else {
-    //* Browser doesn't support Geolocation
-    handleLocationError(false, infoWindow, map.getCenter());
-  }
+                //* update the input field with the current location
+                if (locationSetter.isSettingOrigin()) {
+                    startInput.value = `lat: ${pos.lat.toFixed(
+                        6
+                    )}, lng: ${pos.lng.toFixed(6)}`;
+                } else {
+                    endInput.value = `lat: ${pos.lat.toFixed(
+                        6
+                    )}, lng: ${pos.lng.toFixed(6)}`;
+                }
+            },
+            () => {
+                handleLocationError(true, infoWindow, map.getCenter());
+            }
+        );
+    } else {
+        //* browser doesn't support Geolocation
+        handleLocationError(false, infoWindow, map.getCenter());
+    }
 }
 
 window.addEventListener("resize", () => {
