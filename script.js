@@ -549,7 +549,10 @@ async function getUserLocation() {
                         endInput.value = address;
                     }
                 } catch (error) {
-                    console.error("Failed to reverse geocode user's location:", error);
+                    console.error(
+                        "Failed to reverse geocode user's location:",
+                        error
+                    );
                 }
 
                 //* remove the previous user marker if it exists
@@ -576,7 +579,6 @@ async function getUserLocation() {
         handleLocationError(false, infoWindow, map.getCenter());
     }
 }
-
 
 window.addEventListener("resize", () => {
     const isMobile = window.innerWidth <= 800;
