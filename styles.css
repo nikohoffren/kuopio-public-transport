@@ -110,7 +110,16 @@ button {
 }
 
 button:hover {
-    background-color: #3a63d3;
+    background-color: #498ded;
+}
+
+#toggleBusInfo {
+    padding: 0.2rem 0.4rem;
+    height: 25px;
+    background-color: rgb(0, 123, 255);
+}
+#toggleBusInfo:hover {
+    background-color: #2a60f5;
 }
 
 #useCurrentLocation {
@@ -122,6 +131,7 @@ button:hover {
 
 #busInfoContent {
     display: none;
+    border-radius: 5px;
 }
 
 #busInfo {
