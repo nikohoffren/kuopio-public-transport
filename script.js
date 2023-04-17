@@ -35,46 +35,6 @@ export async function initMap() {
         mapId: config.GOOGLE_MAPS_MAP_ID,
     });
 
-    class BlinkingCircleOverlay extends google.maps.OverlayView {
-        constructor(position, map) {
-            super();
-            this.position = position;
-            this.div = null;
-            this.setMap(map);
-        }
-
-        onAdd() {
-            const div = document.createElement("div");
-            div.className = "blinking";
-            div.style.position = "absolute";
-            div.style.width = "20px";
-            div.style.height = "20px";
-            div.style.borderRadius = "50%";
-            div.style.backgroundColor = "red";
-
-            this.div = div;
-            const panes = this.getPanes();
-            panes.overlayLayer.appendChild(div);
-        }
-
-        draw() {
-            const overlayProjection = this.getProjection();
-            const position = overlayProjection.fromLatLngToDivPixel(
-                this.position
-            );
-
-            this.div.style.left = `${position.x - 10}px`;
-            this.div.style.top = `${position.y - 10}px`;
-        }
-
-        onRemove() {
-            if (this.div) {
-                this.div.parentNode.removeChild(this.div);
-                this.div = null;
-            }
-        }
-    }
-
     const LabelOverlay = defineLabelOverlay();
     const busData = {};
 
@@ -245,7 +205,7 @@ export async function initMap() {
                 const infoWindow = new google.maps.InfoWindow({
                     content: `${station.getAttribute(
                         "name"
-                    )}: ${station.getAttribute("bikes")} bikes available`,
+                    )}: ${station.getAttribute("bikes")} pyörää vapaana`,
                 });
 
                 marker.addListener("click", () => {
@@ -570,14 +530,28 @@ async function reverseGeocode(lat, lng) {
     });
 }
 
-function getUserLocation() {
+async function getUserLocation() {
     if (navigator.geolocation) {
         navigator.geolocation.getCurrentPosition(
-            (position) => {
+            async (position) => {
                 const pos = {
                     lat: position.coords.latitude,
                     lng: position.coords.longitude,
                 };
+
+                //* reverse geocode the user's location
+                try {
+                    const address = await reverseGeocode(pos.lat, pos.lng);
+                    //* update the input field with the address
+                    if (locationSetter.isSettingOrigin()) {
+                        startInput.value = address;
+                    } else {
+                        endInput.value = address;
+                    }
+                } catch (error) {
+                    console.error("Failed to reverse geocode user's location:", error);
+                }
+
                 //* remove the previous user marker if it exists
                 if (userMarker) {
                     userMarker.setMap(null);
@@ -592,27 +566,17 @@ function getUserLocation() {
                     },
                 });
                 map.setCenter(pos);
-
-                //* update the input field with the current location
-                if (locationSetter.isSettingOrigin()) {
-                    startInput.value = `lat: ${pos.lat.toFixed(
-                        6
-                    )}, lng: ${pos.lng.toFixed(6)}`;
-                } else {
-                    endInput.value = `lat: ${pos.lat.toFixed(
-                        6
-                    )}, lng: ${pos.lng.toFixed(6)}`;
-                }
             },
             () => {
                 handleLocationError(true, infoWindow, map.getCenter());
             }
         );
     } else {
-        //* browser doesn't support Geolocation
+        //? browser doesn't support Geolocation
         handleLocationError(false, infoWindow, map.getCenter());
     }
 }
+
 
 window.addEventListener("resize", () => {
     const isMobile = window.innerWidth <= 800;
