@@ -380,28 +380,85 @@ function defineLabelOverlay() {
     return LabelOverlay;
 }
 
-function calculateRoute(origin, destination) {
-    directionsService.route(
-        {
-            origin: origin,
-            destination: destination,
-            travelMode: google.maps.TravelMode.TRANSIT,
-            transitOptions: {
-                modes: [google.maps.TransitMode.BUS],
-            },
-        },
-        (response, status) => {
-            if (status === google.maps.DirectionsStatus.OK) {
-                directionsRenderer.setDirections(response);
-                displayBusInfo(response);
-            } else {
-                window.alert("Ei löydettyjä reittejä. Virhe: " + status);
+async function calculateRoute(origin, destination) {
+    try {
+        const walkingResponse = await getDirections(
+            origin,
+            destination,
+            google.maps.TravelMode.WALKING
+        );
+        const walkingDistance =
+            walkingResponse.routes[0].legs[0].distance.value;
+
+        //* prioritize walking routes for distances less than 1,2 km
+        if (walkingDistance < 1200) {
+            directionsRenderer.setDirections(walkingResponse);
+            displayRouteInfo(walkingResponse, false);
+            return;
+        }
+
+        const transitResponse = await getDirections(
+            origin,
+            destination,
+            google.maps.TravelMode.TRANSIT,
+            { modes: [google.maps.TransitMode.BUS] }
+        );
+
+        directionsRenderer.setDirections(transitResponse);
+        displayRouteInfo(transitResponse, true);
+    } catch (transitError) {
+        console.warn("Transit route not found:", transitError);
+
+        try {
+            const walkingResponse = await getDirections(
+                origin,
+                destination,
+                google.maps.TravelMode.WALKING
+            );
+            directionsRenderer.setDirections(walkingResponse);
+            displayRouteInfo(walkingResponse, false);
+        } catch (walkingError) {
+            console.warn("Walking route not found:", walkingError);
+
+            try {
+                const bicyclingResponse = await getDirections(
+                    origin,
+                    destination,
+                    google.maps.TravelMode.BICYCLING
+                );
+                directionsRenderer.setDirections(bicyclingResponse);
+                displayRouteInfo(bicyclingResponse, false);
+            } catch (bicyclingError) {
+                console.error("Bicycling route not found:", bicyclingError);
+                window.alert(
+                    "Ei löydettyjä reittejä. Virhe: " + bicyclingError
+                );
             }
         }
-    );
+    }
 }
 
-function displayBusInfo(response) {
+function getDirections(origin, destination, travelMode, transitOptions) {
+    return new Promise((resolve, reject) => {
+        directionsService.route(
+            {
+                origin: origin,
+                destination: destination,
+                travelMode: travelMode,
+                transitOptions: transitOptions,
+            },
+            (response, status) => {
+                if (status === google.maps.DirectionsStatus.OK) {
+                    resolve(response);
+                } else {
+                    reject(status);
+                }
+            }
+        );
+    });
+}
+
+function displayRouteInfo(response, isBusRoute) {
     const busInfoElement = document.querySelector("#busInfoContent");
     const legs = response.routes[0].legs;
 
@@ -409,37 +466,47 @@ function displayBusInfo(response) {
     busInfoElement.style.padding = "16px";
     busInfoElement.style.marginBottom = "10px";
 
-    let busInfoHTML = "";
+    let routeInfoHTML = "";
 
-    for (const leg of legs) {
-        for (const step of leg.steps) {
-            if (step.travel_mode === "TRANSIT") {
-                const arrivalTime = step.transit.arrival_time.text;
-                const departureTime = step.transit.departure_time.text;
-                const lineName =
-                    step.transit.line.short_name || step.transit.line.name;
-                const delay =
-                    step.transit.departure_time.value -
-                    step.transit.departure_time.real_value;
+    if (isBusRoute) {
+        for (const leg of legs) {
+            for (const step of leg.steps) {
+                if (step.travel_mode === "TRANSIT") {
+                    const arrivalTime = step.transit.arrival_time.text;
+                    const departureTime = step.transit.departure_time.text;
+                    const lineName =
+                        step.transit.line.short_name || step.transit.line.name;
+                    const delay =
+                        step.transit.departure_time.value -
+                        step.transit.departure_time.real_value;
 
-                busInfoHTML += `<p>
-                          Linja: ${lineName}<br>
-                          Lähtöaika: ${departureTime}<br>
-                          Saapumisaika: ${arrivalTime}<br>
-                          Matka-aika: ${step.duration.text}<br>
-                          Viive: ${
-                              delay > 0
-                                  ? `${delay} minuuttia myöhässä`
-                                  : "Ajallaan"
-                          }
-                          <br><br>
-                        </p>`;
+                    routeInfoHTML += `<p>
+                        Linja: ${lineName}<br>
+                        Lähtöaika: ${departureTime}<br>
+                        Saapumisaika: ${arrivalTime}<br>
+                        Matka-aika: ${step.duration.text}<br>
+                        Viive: ${
+                            delay > 0
+                                ? `${delay} minuuttia myöhässä`
+                                : "Ajallaan"
+                        }
+                        <br><br>
+                    </p>`;
+                }
             }
+        }
+        routeInfoHTML += `<p><a href="https://vilkku.kuopio.fi/" target="_blank" class="link">Osta lippu</a></p>`;
+    } else {
+        for (const leg of legs) {
+            routeInfoHTML += `<p>
+                Matka-aika kävellen: ${leg.duration.text}<br>
+                Matkan pituus: ${leg.distance.text}
+                <br><br>
+            </p>`;
         }
     }
 
-    busInfoHTML += `<p><a href="https://vilkku.kuopio.fi/" target="_blank" class="link">Osta lippu</a></p>`;
-    busInfoElement.innerHTML = busInfoHTML;
+    busInfoElement.innerHTML = routeInfoHTML;
 
     //* Show the toggleBusInfo button once the route information is available
     document.querySelector("#toggleBusInfo").style.display = "block";
