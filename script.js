@@ -66,15 +66,6 @@ export async function initMap() {
                 const busId = bus.vehicle.id;
 
                 if (!busData[busId]) {
-                    const busMarker = new google.maps.Marker({
-                        position: position,
-                        map: map,
-                        icon: {
-                            url: "img/bus-stop-icon.png",
-                            scaledSize: new google.maps.Size(30, 30),
-                        },
-                    });
-
                     const infoWindow = new google.maps.InfoWindow({
                         //* converting the bus speed from m/s to km/h
                         content: `Nopeus: ${(bus.position.speed * 3.6).toFixed(
@@ -84,26 +75,20 @@ export async function initMap() {
                         }`,
                     });
 
-                    busMarker.addListener("click", () => {
-                        infoWindow.open(map, busMarker);
+                    const busNumber = busEntity.vehicle.trip.routeId;
+                    const labelOverlay = new LabelOverlay(position, busNumber, map, infoWindow);
+
+                    labelOverlay.setClickListener(() => {
+                        infoWindow.open(map, labelOverlay);
+                        console.log("Bus icon clicked");
                     });
 
-                    const busNumber = busEntity.vehicle.trip.routeId;
-                    const labelOverlay = new LabelOverlay(
-                        position,
-                        busNumber,
-                        map
-                    );
 
                     busData[busId] = {
-                        marker: busMarker,
                         infoWindow: infoWindow,
                         labelOverlay: labelOverlay,
                     };
                 } else {
-                    const busMarker = busData[busId].marker;
-                    busMarker.setPosition(position);
-
                     const infoWindow = busData[busId].infoWindow;
                     infoWindow.setContent(
                         `Nopeus: ${(bus.position.speed * 3.6).toFixed(
@@ -325,25 +310,62 @@ export async function initMap() {
 
 function defineLabelOverlay() {
     class LabelOverlay extends google.maps.OverlayView {
-        constructor(position, label, map) {
+        constructor(position, label, map, infoWindow) {
             super();
             this.position = position;
             this.label = label;
+            this.infoWindow = infoWindow;
             this.div = null;
             this.setMap(map);
         }
 
         onAdd() {
-            const div = document.createElement("div");
-            div.style.position = "absolute";
-            div.style.fontSize = "14px";
-            div.style.fontWeight = "bold";
-            div.style.color = "white";
-            div.textContent = this.label;
+            const container = document.createElement("div");
+            container.style.position = "absolute";
+            container.style.zIndex = "1000";
 
-            this.div = div;
+            const img = document.createElement("img");
+            img.src = "img/bluecircle.png";
+            img.style.width = "32px";
+            img.style.height = "32px";
+            img.style.cursor = 'pointer';
+            container.appendChild(img);
+
+            const label = document.createElement("div");
+            label.style.position = "absolute";
+            label.style.left = "50%";
+            label.style.top = "50%";
+            label.style.transform = "translate(-50%, -50%)";
+            label.style.fontSize = "14px";
+            label.style.fontWeight = "bold";
+            label.style.color = "white";
+            label.style.cursor = 'pointer';
+            label.textContent = this.label;
+            container.appendChild(label);
+
+            this.div = container;
             const panes = this.getPanes();
-            panes.overlayLayer.appendChild(div);
+            panes.overlayLayer.appendChild(container);
+
+            container.style.cursor = 'pointer';
+            container.addEventListener("click", (e) => {
+                console.log("Container click event fired");
+                this.handleClick(e);
+            });
+
+            container.addEventListener("mouseover", () => {
+                container.style.cursor = "pointer";
+            });
+
+            container.addEventListener("mouseout", () => {
+                container.style.cursor = "default";
+            });
+
+            container.addEventListener("click", (e) => this.handleClick(e));
+
+            img.addEventListener("click", (e) => this.handleClick(e));
+            label.addEventListener("click", (e) => this.handleClick(e));
+
         }
 
         draw() {
@@ -370,10 +392,24 @@ function defineLabelOverlay() {
                 const overlayProjection = this.getProjection();
                 const newPosition =
                     overlayProjection.fromLatLngToDivPixel(position);
-
                 this.div.style.left = `${newPosition.x}px`;
                 this.div.style.top = `${newPosition.y}px`;
             }
+        }
+
+        handleClick(e) {
+            console.log("LabelOverlay handleClick() called");
+            if (this.clickListener) {
+                this.clickListener();
+            }
+            if (e) {
+                e.stopPropagation();
+            }
+        }
+
+
+        setClickListener(listener) {
+            this.clickListener = listener;
         }
     }
 
