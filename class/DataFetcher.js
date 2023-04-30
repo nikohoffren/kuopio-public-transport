@@ -37,16 +37,17 @@ export default class DataFetcher {
                 if (!this.busData[busId]) {
                     const infoWindow = new google.maps.InfoWindow({
                         //* converting the bus speed from m/s to km/h
-                        content:
-                        `
+                        content: `
                             <strong>Linja: ${bus.trip.routeId}</strong><br>
                             Reitti: ${bus.vehicle.label}<br>
-                            Nopeus: ${(bus.position.speed * 3.6).toFixed(2)} km/h.
+                            Nopeus: ${(bus.position.speed * 3.6).toFixed(
+                                2
+                            )} km/h.
                         `,
                     });
 
                     const routeId = busEntity.vehicle.trip.routeId;
-                    // Pass an onClick callback to the LabelOverlay constructor
+                    //* Pass an onClick callback to the LabelOverlay constructor
                     const labelOverlay = new this.LabelOverlay(
                         position,
                         routeId,
@@ -54,7 +55,9 @@ export default class DataFetcher {
                         infoWindow,
                         () => {
                             if (this.followedBusId !== null) {
-                                this.busData[this.followedBusId].labelOverlay.isFollowed = false;
+                                this.busData[
+                                    this.followedBusId
+                                ].labelOverlay.isFollowed = false;
                             }
                             this.followedBusId = busId;
                             this.map.setCenter(position);
@@ -73,23 +76,22 @@ export default class DataFetcher {
                         <strong>Linja: ${bus.trip.routeId}</strong><br>
                         Reitti: ${bus.vehicle.label}<br>
                         Nopeus: ${(bus.position.speed * 3.6).toFixed(2)} km/h.
-                        `,
+                        `
                     );
 
                     const labelOverlay = this.busData[busId].labelOverlay;
                     labelOverlay.updatePosition(position);
 
-                    // Update the map center if the current bus is being followed
+                    //* Update the map center if the current bus is being followed
                     if (labelOverlay.isFollowed) {
                         this.map.setCenter(position);
                     }
                 }
             }
-            } catch (error) {
-                console.error("Error fetching bus locations:", error);
-            }
+        } catch (error) {
+            console.error("Error fetching bus locations:", error);
         }
-
+    }
 
     async fetchAndDisplayServiceAlerts() {
         try {

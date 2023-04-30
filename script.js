@@ -236,7 +236,7 @@ function defineLabelOverlay() {
             this.position = position;
             this.label = label;
             this.infoWindow = infoWindow;
-            this.isFollowed = false; // Add a property to determine if the bus is being followed
+            this.isFollowed = false;
 
             //* Set the marker without an icon first
             this.marker = new google.maps.Marker({
@@ -260,7 +260,7 @@ function defineLabelOverlay() {
 
             //* Set the click listener for the marker
             this.marker.addListener("click", () => {
-                this.isFollowed = !this.isFollowed; // Toggle isFollowed when the marker is clicked
+                this.isFollowed = !this.isFollowed;
                 if (onClick) {
                     onClick();
                 }
