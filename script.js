@@ -75,7 +75,12 @@ export async function initMap() {
                     });
 
                     const routeId = busEntity.vehicle.trip.routeId;
-                    const labelOverlay = new LabelOverlay(position, routeId, map, infoWindow);
+                    const labelOverlay = new LabelOverlay(
+                        position,
+                        routeId,
+                        map,
+                        infoWindow
+                    );
 
                     busData[busId] = {
                         infoWindow: infoWindow,
@@ -303,29 +308,29 @@ export async function initMap() {
 
 function createBusIconWithNumber(number) {
     return new Promise((resolve, reject) => {
-        const canvas = document.createElement('canvas');
+        const canvas = document.createElement("canvas");
         canvas.width = 32;
         canvas.height = 32;
-        const ctx = canvas.getContext('2d');
+        const ctx = canvas.getContext("2d");
 
         const img = new Image();
-        img.src = 'img/bluecircle.png';
+        img.src = "img/bluecircle.png";
         img.onload = () => {
             ctx.drawImage(img, 0, 0, 32, 32);
 
             //* Draw the number on top of the bus icon
-            ctx.font = '14px Arial';
-            ctx.fillStyle = 'white';
-            ctx.textAlign = 'center';
-            ctx.textBaseline = 'middle';
+            ctx.font = "14px Arial";
+            ctx.fillStyle = "white";
+            ctx.textAlign = "center";
+            ctx.textBaseline = "middle";
             ctx.fillText(number, 16, 16);
 
             //* Convert the canvas to a data URL
-            const dataURL = canvas.toDataURL('image/png');
+            const dataURL = canvas.toDataURL("image/png");
             resolve(dataURL);
         };
         img.onerror = () => {
-            reject(new Error('Failed to load bus icon image'));
+            reject(new Error("Failed to load bus icon image"));
         };
     });
 }
@@ -354,7 +359,7 @@ function defineLabelOverlay() {
                     });
                 })
                 .catch((error) => {
-                    console.error('Error creating bus icon:', error);
+                    console.error("Error creating bus icon:", error);
                 });
 
             //* Set the click listener for the marker
@@ -391,8 +396,8 @@ async function calculateRoute(origin, destination) {
         const walkingDistance =
             walkingResponse.routes[0].legs[0].distance.value;
 
-        //* prioritize walking routes for distances less than 1,2 km
-        if (walkingDistance < 1200) {
+        //* prioritize walking routes for distances less than 1.5 km
+        if (walkingDistance < 1500) {
             directionsRenderer.setDirections(walkingResponse);
             displayRouteInfo(walkingResponse, false);
             return;
@@ -404,6 +409,16 @@ async function calculateRoute(origin, destination) {
             google.maps.TravelMode.TRANSIT,
             { modes: [google.maps.TransitMode.BUS] }
         );
+
+        const transitDistance =
+            transitResponse.routes[0].legs[0].distance.value;
+
+        //* prioritize walking routes over bus routes for distances less than 1.5 km
+        if (transitDistance < 1500) {
+            directionsRenderer.setDirections(walkingResponse);
+            displayRouteInfo(walkingResponse, false);
+            return;
+        }
 
         directionsRenderer.setDirections(transitResponse);
         displayRouteInfo(transitResponse, true);
@@ -438,6 +453,7 @@ async function calculateRoute(origin, destination) {
         }
     }
 }
+
 
 function getDirections(origin, destination, travelMode, transitOptions) {
     return new Promise((resolve, reject) => {
