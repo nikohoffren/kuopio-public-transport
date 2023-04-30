@@ -9,6 +9,7 @@ let startAutocomplete;
 let endAutocomplete;
 let startInput;
 let endInput;
+let customPolyline;
 
 const locationSetter = new LocationSetter();
 
@@ -223,6 +224,7 @@ export async function initMap() {
     directionsService = new google.maps.DirectionsService();
     directionsRenderer = new google.maps.DirectionsRenderer();
     directionsRenderer.setMap(map);
+    directionsRenderer.setOptions({ suppressPolylines: true });
 
     const markers = [
         [
@@ -305,6 +307,58 @@ export async function initMap() {
     updateServiceAlerts();
     updateTripUpdates();
 }
+
+
+
+function updatePolylineOptions(isWalkingRoute) {
+    directionsRenderer.setOptions({
+        polylineOptions: {
+            strokeColor: isWalkingRoute ? '#3399FF' : '#0000FF',
+            strokeOpacity: isWalkingRoute ? 0.7 : 1.0,
+            strokeWeight: isWalkingRoute ? 4 : 5,
+            icons: isWalkingRoute
+                ? [
+                      {
+                          icon: {
+                              path: 'M 0,-1 0,1',
+                              strokeOpacity: 1,
+                              scale: 4,
+                          },
+                          offset: '0',
+                          repeat: '20px',
+                      },
+                  ]
+                : null,
+        },
+    });
+}
+
+function drawCustomPolyline(response, isWalkingRoute) {
+    const polylineOptions = {
+        strokeColor: isWalkingRoute ? '#3399FF' : '#0000FF',
+        strokeOpacity: isWalkingRoute ? 0.7 : 1.0,
+        strokeWeight: isWalkingRoute ? 4 : 5,
+        icons: isWalkingRoute
+            ? [
+                  {
+                      icon: {
+                          path: 'M 0,-1 0,1',
+                          strokeOpacity: 1,
+                          scale: 4,
+                      },
+                      offset: '0',
+                      repeat: '20px',
+                  },
+              ]
+            : null,
+    };
+    const polyline = new google.maps.Polyline(polylineOptions);
+    const path = response.routes[0].overview_path;
+    polyline.setPath(path);
+    polyline.setMap(map);
+    return polyline;
+}
+
 
 function createBusIconWithNumber(number) {
     return new Promise((resolve, reject) => {
@@ -398,8 +452,12 @@ async function calculateRoute(origin, destination) {
 
         //* prioritize walking routes for distances less than 1.5 km
         if (walkingDistance < 1500) {
+            if (customPolyline) {
+                customPolyline.setMap(null);
+            }
+            customPolyline = drawCustomPolyline(walkingResponse, true);
             directionsRenderer.setDirections(walkingResponse);
-            displayRouteInfo(walkingResponse, false);
+            displayRouteInfo(walkingResponse, false, customPolyline);
             return;
         }
 
@@ -415,13 +473,22 @@ async function calculateRoute(origin, destination) {
 
         //* prioritize walking routes over bus routes for distances less than 1.5 km
         if (transitDistance < 1500) {
+            if (customPolyline) {
+                customPolyline.setMap(null);
+            }
+            customPolyline = drawCustomPolyline(walkingResponse, true);
             directionsRenderer.setDirections(walkingResponse);
-            displayRouteInfo(walkingResponse, false);
+            displayRouteInfo(walkingResponse, false, customPolyline);
             return;
         }
 
+        if (customPolyline) {
+            customPolyline.setMap(null);
+        }
+        customPolyline = drawCustomPolyline(transitResponse, false);
         directionsRenderer.setDirections(transitResponse);
-        displayRouteInfo(transitResponse, true);
+        displayRouteInfo(transitResponse, true, customPolyline);
+
     } catch (transitError) {
         console.warn("Transit route not found:", transitError);
 
@@ -431,8 +498,12 @@ async function calculateRoute(origin, destination) {
                 destination,
                 google.maps.TravelMode.WALKING
             );
+            if (customPolyline) {
+                customPolyline.setMap(null);
+            }
+            customPolyline = drawCustomPolyline(walkingResponse, true);
             directionsRenderer.setDirections(walkingResponse);
-            displayRouteInfo(walkingResponse, false);
+            displayRouteInfo(walkingResponse, false, customPolyline);
         } catch (walkingError) {
             console.warn("Walking route not found:", walkingError);
 
@@ -442,8 +513,12 @@ async function calculateRoute(origin, destination) {
                     destination,
                     google.maps.TravelMode.BICYCLING
                 );
+                if (customPolyline) {
+                    customPolyline.setMap(null);
+                }
+                customPolyline = drawCustomPolyline(bicyclingResponse, true);
                 directionsRenderer.setDirections(bicyclingResponse);
-                displayRouteInfo(bicyclingResponse, false);
+                displayRouteInfo(bicyclingResponse, false, customPolyline);
             } catch (bicyclingError) {
                 console.error("Bicycling route not found:", bicyclingError);
                 window.alert(
@@ -453,6 +528,7 @@ async function calculateRoute(origin, destination) {
         }
     }
 }
+
 
 
 function getDirections(origin, destination, travelMode, transitOptions) {
@@ -475,7 +551,7 @@ function getDirections(origin, destination, travelMode, transitOptions) {
     });
 }
 
-function displayRouteInfo(response, isBusRoute) {
+function displayRouteInfo(response, isBusRoute, polyline) {
     const busInfoElement = document.querySelector("#busInfoContent");
     const legs = response.routes[0].legs;
 
