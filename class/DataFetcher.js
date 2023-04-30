@@ -33,14 +33,14 @@ export default class DataFetcher {
                 const busId = bus.vehicle.id;
 
                 if (!this.busData[busId]) {
-                    // Access busData using this keyword
                     const infoWindow = new google.maps.InfoWindow({
                         //* converting the bus speed from m/s to km/h
-                        content: `Nopeus: ${(bus.position.speed * 3.6).toFixed(
-                            2
-                        )} km/h.<br>Linja: ${bus.trip.routeId}<br>Reitti: ${
-                            bus.vehicle.label
-                        }`,
+                        content:
+                        `
+                            <strong>Linja: ${bus.trip.routeId}</strong><br>
+                            Reitti: ${bus.vehicle.label}<br>
+                            Nopeus: ${(bus.position.speed * 3.6).toFixed(2)} km/h.
+                        `,
                     });
 
                     const routeId = busEntity.vehicle.trip.routeId;
@@ -52,21 +52,20 @@ export default class DataFetcher {
                     );
 
                     this.busData[busId] = {
-                        // Access busData using this keyword
                         infoWindow: infoWindow,
                         labelOverlay: labelOverlay,
                     };
                 } else {
-                    const infoWindow = this.busData[busId].infoWindow; // Access busData using this keyword
+                    const infoWindow = this.busData[busId].infoWindow;
                     infoWindow.setContent(
-                        `Nopeus: ${(bus.position.speed * 3.6).toFixed(
-                            2
-                        )} km/h.<br>Linja: ${bus.trip.routeId}<br>Reitti: ${
-                            bus.vehicle.label
-                        }`
+                        `
+                        <strong>Linja: ${bus.trip.routeId}</strong><br>
+                        Reitti: ${bus.vehicle.label}<br>
+                        Nopeus: ${(bus.position.speed * 3.6).toFixed(2)} km/h.
+                        `,
                     );
 
-                    const labelOverlay = this.busData[busId].labelOverlay; // Access busData using this keyword
+                    const labelOverlay = this.busData[busId].labelOverlay;
                     labelOverlay.updatePosition(position);
                 }
             }

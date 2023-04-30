@@ -72,7 +72,7 @@ export async function initMap() {
 
     const markers = [
         [
-            `Bike Taxi Kuopio<br>Soita ja tilaa: 044 4410 520<br><a href="https://www.biketaxi.fi/hinnasto/?kaupunki=kuopio" target="_blank">www.biketaxi.fi</a>`,
+            `<strong>Bike Taxi Kuopio</strong><br>Soita ja tilaa: 044 4410 520<br><a href="https://www.biketaxi.fi/hinnasto/?kaupunki=kuopio" target="_blank">www.biketaxi.fi</a>`,
             62.892575633523094,
             27.696424354781517,
             "img/biketaxi-kuopio.png",
@@ -85,7 +85,7 @@ export async function initMap() {
         const marker = new google.maps.Marker({
             position: { lat: currMarker[1], lng: currMarker[2] },
             map,
-            title: currMarker[0],
+            // title: currMarker[0],
             icon: {
                 url: currMarker[3],
                 scaledSize: new google.maps.Size(currMarker[4], currMarker[5]),
