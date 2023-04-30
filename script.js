@@ -1,4 +1,5 @@
 import LocationSetter from "./LocationSetter.js";
+import DataFetcher from "./DataFetcher.js";
 
 let map;
 let userMarker;
@@ -12,6 +13,8 @@ let endInput;
 let customPolyline;
 
 const locationSetter = new LocationSetter();
+const LabelOverlay = defineLabelOverlay();
+const busData = {};
 
 export async function initMap() {
     const { Map } = await google.maps.importLibrary("maps", "places");
@@ -35,188 +38,29 @@ export async function initMap() {
         mapId: config.GOOGLE_MAPS_MAP_ID,
     });
 
-    const LabelOverlay = defineLabelOverlay();
-    const busData = {};
+    const dataFetcher = new DataFetcher(
+        map,
+        LabelOverlay,
+        createBusIconWithNumber,
+        busData
+    );
 
-    async function fetchAndDisplayBusLocations() {
-        try {
-            const apiUrl =
-                window.location.hostname === "localhost"
-                    ? "http://localhost:3999/api/vehiclepositions"
-                    : "/api/vehiclepositions";
-
-            const response = await fetch(apiUrl);
-
-            if (!response.ok) {
-                throw new Error(
-                    `API request failed with status ${response.status}`
-                );
-            }
-
-            //* Process and display the bus locations on the map
-            const data = await response.json();
-            // console.log("Vilkku bus data:", data);
-
-            for (const busEntity of data.entity) {
-                const bus = busEntity.vehicle;
-                const position = {
-                    lat: bus.position.latitude,
-                    lng: bus.position.longitude,
-                };
-                const busId = bus.vehicle.id;
-
-                if (!busData[busId]) {
-                    const infoWindow = new google.maps.InfoWindow({
-                        //* converting the bus speed from m/s to km/h
-                        content: `Nopeus: ${(bus.position.speed * 3.6).toFixed(
-                            2
-                        )} km/h.<br>Linja: ${bus.trip.routeId}<br>Reitti: ${
-                            bus.vehicle.label
-                        }`,
-                    });
-
-                    const routeId = busEntity.vehicle.trip.routeId;
-                    const labelOverlay = new LabelOverlay(
-                        position,
-                        routeId,
-                        map,
-                        infoWindow
-                    );
-
-                    busData[busId] = {
-                        infoWindow: infoWindow,
-                        labelOverlay: labelOverlay,
-                    };
-                } else {
-                    const infoWindow = busData[busId].infoWindow;
-                    infoWindow.setContent(
-                        `Nopeus: ${(bus.position.speed * 3.6).toFixed(
-                            2
-                        )} km/h.<br>Linja: ${bus.trip.routeId}<br>Reitti: ${
-                            bus.vehicle.label
-                        }`
-                    );
-
-                    const labelOverlay = busData[busId].labelOverlay;
-                    labelOverlay.updatePosition(position);
-                }
-            }
-        } catch (error) {
-            console.error("Error fetching bus locations:", error);
-        }
-    }
-
-    async function fetchAndDisplayServiceAlerts() {
-        try {
-            const apiUrl =
-                window.location.hostname === "localhost"
-                    ? "http://localhost:3999/api/servicealerts"
-                    : "/api/servicealerts";
-
-            const response = await fetch(apiUrl);
-
-            if (!response.ok) {
-                throw new Error(
-                    `API request failed with status ${response.status}`
-                );
-            }
-
-            //* Process and display the service alerts
-            const data = await response.json();
-            console.log("Service alerts:", data);
-        } catch (error) {
-            console.error("Error fetching service alerts:", error);
-        }
-    }
-
-    async function fetchAndDisplayTripUpdates() {
-        try {
-            const apiUrl =
-                window.location.hostname === "localhost"
-                    ? "http://localhost:3999/api/tripupdates"
-                    : "/api/tripupdates";
-
-            const response = await fetch(apiUrl);
-
-            if (!response.ok) {
-                throw new Error(
-                    `API request failed with status ${response.status}`
-                );
-            }
-
-            //* Process and display the trip updates
-            const data = await response.json();
-            // console.log("Trip updates:", data);
-        } catch (error) {
-            console.error("Error fetching trip updates:", error);
-        }
-    }
-
-    async function fetchAndDisplayVilkkuBicycles() {
-        const apiUrl = "/.netlify/functions/vilkkuBicycles";
-
-        try {
-            const response = await fetch(apiUrl);
-
-            if (!response.ok) {
-                throw new Error(
-                    `API request failed with status ${response.status}`
-                );
-            }
-
-            const data = await response.text();
-            console.log("Vilkku bicycles data: " + data);
-            const parser = new DOMParser();
-            const xmlData = parser.parseFromString(data, "application/xml");
-            const bicycleStations = xmlData.getElementsByTagName("marker");
-
-            console.log("Number of bicycle stations:", bicycleStations.length);
-
-            for (const station of bicycleStations) {
-                const lat = parseFloat(station.getAttribute("lat"));
-                const lng = parseFloat(station.getAttribute("lng"));
-                const position = { lat, lng };
-
-                const marker = new google.maps.Marker({
-                    position,
-                    map,
-                    icon: {
-                        url: "img/vilkku-bicycle-icon.jpg",
-                        scaledSize: new google.maps.Size(30, 30),
-                    },
-                });
-
-                const infoWindow = new google.maps.InfoWindow({
-                    content: `${station.getAttribute(
-                        "name"
-                    )}: ${station.getAttribute("bikes")} pyörää vapaana`,
-                });
-
-                marker.addListener("click", () => {
-                    infoWindow.open(map, marker);
-                });
-            }
-        } catch (error) {
-            console.error("Error fetching VILKKU bicycle data:", error);
-        }
-    }
-
-    fetchAndDisplayVilkkuBicycles();
+    dataFetcher.fetchAndDisplayVilkkuBicycles();
 
     function updateBusPositions() {
-        fetchAndDisplayBusLocations().then(() => {
+        dataFetcher.fetchAndDisplayBusLocations().then(() => {
             setTimeout(updateBusPositions, 2000);
         });
     }
 
     function updateServiceAlerts() {
-        fetchAndDisplayServiceAlerts().then(() => {
+        dataFetcher.fetchAndDisplayServiceAlerts().then(() => {
             setTimeout(updateServiceAlerts, 60000);
         });
     }
 
     function updateTripUpdates() {
-        fetchAndDisplayTripUpdates().then(() => {
+        dataFetcher.fetchAndDisplayTripUpdates().then(() => {
             setTimeout(updateTripUpdates, 60000);
         });
     }
@@ -308,24 +152,22 @@ export async function initMap() {
     updateTripUpdates();
 }
 
-
-
 function updatePolylineOptions(isWalkingRoute) {
     directionsRenderer.setOptions({
         polylineOptions: {
-            strokeColor: isWalkingRoute ? '#3399FF' : '#0000FF',
+            strokeColor: isWalkingRoute ? "#3399FF" : "#0000FF",
             strokeOpacity: isWalkingRoute ? 0.7 : 1.0,
             strokeWeight: isWalkingRoute ? 4 : 5,
             icons: isWalkingRoute
                 ? [
                       {
                           icon: {
-                              path: 'M 0,-1 0,1',
+                              path: "M 0,-1 0,1",
                               strokeOpacity: 1,
                               scale: 4,
                           },
-                          offset: '0',
-                          repeat: '20px',
+                          offset: "0",
+                          repeat: "20px",
                       },
                   ]
                 : null,
@@ -335,19 +177,19 @@ function updatePolylineOptions(isWalkingRoute) {
 
 function drawCustomPolyline(response, isWalkingRoute) {
     const polylineOptions = {
-        strokeColor: isWalkingRoute ? '#3399FF' : '#0000FF',
+        strokeColor: isWalkingRoute ? "#3399FF" : "#0000FF",
         strokeOpacity: isWalkingRoute ? 0.7 : 1.0,
         strokeWeight: isWalkingRoute ? 4 : 5,
         icons: isWalkingRoute
             ? [
                   {
                       icon: {
-                          path: 'M 0,-1 0,1',
+                          path: "M 0,-1 0,1",
                           strokeOpacity: 1,
                           scale: 4,
                       },
-                      offset: '0',
-                      repeat: '20px',
+                      offset: "0",
+                      repeat: "20px",
                   },
               ]
             : null,
@@ -358,7 +200,6 @@ function drawCustomPolyline(response, isWalkingRoute) {
     polyline.setMap(map);
     return polyline;
 }
-
 
 function createBusIconWithNumber(number) {
     return new Promise((resolve, reject) => {
@@ -488,7 +329,6 @@ async function calculateRoute(origin, destination) {
         customPolyline = drawCustomPolyline(transitResponse, false);
         directionsRenderer.setDirections(transitResponse);
         displayRouteInfo(transitResponse, true, customPolyline);
-
     } catch (transitError) {
         console.warn("Transit route not found:", transitError);
 
@@ -528,8 +368,6 @@ async function calculateRoute(origin, destination) {
         }
     }
 }
-
-
 
 function getDirections(origin, destination, travelMode, transitOptions) {
     return new Promise((resolve, reject) => {
