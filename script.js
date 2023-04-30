@@ -304,29 +304,34 @@ export async function initMap() {
 }
 
 function createBusIconWithNumber(number) {
-    const canvas = document.createElement('canvas');
-    canvas.width = 32;
-    canvas.height = 32;
-    const ctx = canvas.getContext('2d');
+    return new Promise((resolve, reject) => {
+        const canvas = document.createElement('canvas');
+        canvas.width = 32;
+        canvas.height = 32;
+        const ctx = canvas.getContext('2d');
 
-    // Draw the bus icon
-    const img = new Image();
-    img.src = 'img/bluecircle.png';
-    ctx.drawImage(img, 0, 0, 32, 32);
+        // Draw the bus icon
+        const img = new Image();
+        img.src = 'img/bluecircle.png';
+        img.onload = () => {
+            ctx.drawImage(img, 0, 0, 32, 32);
 
-    // Draw the number on top of the bus icon
-    ctx.font = '14px Arial';
-    ctx.fillStyle = 'white';
-    ctx.textAlign = 'center';
-    ctx.textBaseline = 'middle';
-    ctx.fillText(number, 16, 16);
+            // Draw the number on top of the bus icon
+            ctx.font = '14px Arial';
+            ctx.fillStyle = 'white';
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            ctx.fillText(number, 16, 16);
 
-    // Convert the canvas to a data URL
-    const dataURL = canvas.toDataURL('image/png');
-    return dataURL;
+            // Convert the canvas to a data URL
+            const dataURL = canvas.toDataURL('image/png');
+            resolve(dataURL);
+        };
+        img.onerror = () => {
+            reject(new Error('Failed to load bus icon image'));
+        };
+    });
 }
-
-
 
 function defineLabelOverlay() {
     class LabelOverlay {
@@ -335,20 +340,30 @@ function defineLabelOverlay() {
             this.label = label;
             this.infoWindow = infoWindow;
 
+            // Set the marker without an icon first
             this.marker = new google.maps.Marker({
                 position: position,
                 map: map,
-                icon: {
-                    url: createBusIconWithNumber(label),
-                    scaledSize: new google.maps.Size(32, 32),
-                },
             });
+
+            // Load the custom icon and update the marker
+            createBusIconWithNumber(label)
+                .then((iconDataURL) => {
+                    this.marker.setIcon({
+                        url: iconDataURL,
+                        scaledSize: new google.maps.Size(32, 32),
+                    });
+                })
+                .catch((error) => {
+                    console.error('Error creating bus icon:', error);
+                });
 
             // Set the click listener for the marker
             this.marker.addListener("click", () => {
                 this.infoWindow.open(map, this.marker);
             });
         }
+
         updatePosition(position) {
             this.position = position;
             if (this.marker) {
