@@ -396,8 +396,8 @@ async function calculateRoute(origin, destination) {
         const walkingDistance =
             walkingResponse.routes[0].legs[0].distance.value;
 
-        //* prioritize walking routes for distances less than 1,2 km
-        if (walkingDistance < 1200) {
+        //* prioritize walking routes for distances less than 1.5 km
+        if (walkingDistance < 1500) {
             directionsRenderer.setDirections(walkingResponse);
             displayRouteInfo(walkingResponse, false);
             return;
@@ -409,6 +409,16 @@ async function calculateRoute(origin, destination) {
             google.maps.TravelMode.TRANSIT,
             { modes: [google.maps.TransitMode.BUS] }
         );
+
+        const transitDistance =
+            transitResponse.routes[0].legs[0].distance.value;
+
+        //* prioritize walking routes over bus routes for distances less than 1.5 km
+        if (transitDistance < 1500) {
+            directionsRenderer.setDirections(walkingResponse);
+            displayRouteInfo(walkingResponse, false);
+            return;
+        }
 
         directionsRenderer.setDirections(transitResponse);
         displayRouteInfo(transitResponse, true);
@@ -443,6 +453,7 @@ async function calculateRoute(origin, destination) {
         }
     }
 }
+
 
 function getDirections(origin, destination, travelMode, transitOptions) {
     return new Promise((resolve, reject) => {
