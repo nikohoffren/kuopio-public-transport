@@ -1,5 +1,5 @@
-import LocationSetter from "./LocationSetter.js";
-import DataFetcher from "./DataFetcher.js";
+import LocationSetter from "./class/LocationSetter.js";
+import DataFetcher from "./class/DataFetcher.js";
 
 let map;
 let userMarker;
