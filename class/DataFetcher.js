@@ -4,7 +4,9 @@ export default class DataFetcher {
         this.LabelOverlay = LabelOverlay;
         this.createBusIconWithNumber = createBusIconWithNumber;
         this.busData = busData;
+        this.followedBusId = null;
     }
+
     async fetchAndDisplayBusLocations() {
         try {
             const apiUrl =
@@ -44,11 +46,20 @@ export default class DataFetcher {
                     });
 
                     const routeId = busEntity.vehicle.trip.routeId;
+                    // Pass an onClick callback to the LabelOverlay constructor
                     const labelOverlay = new this.LabelOverlay(
                         position,
                         routeId,
                         this.map,
-                        infoWindow
+                        infoWindow,
+                        () => {
+                            if (this.followedBusId !== null) {
+                                this.busData[this.followedBusId].labelOverlay.isFollowed = false;
+                            }
+                            this.followedBusId = busId;
+                            this.map.setCenter(position);
+                            labelOverlay.isFollowed = true;
+                        }
                     );
 
                     this.busData[busId] = {
@@ -67,12 +78,18 @@ export default class DataFetcher {
 
                     const labelOverlay = this.busData[busId].labelOverlay;
                     labelOverlay.updatePosition(position);
+
+                    // Update the map center if the current bus is being followed
+                    if (labelOverlay.isFollowed) {
+                        this.map.setCenter(position);
+                    }
                 }
             }
-        } catch (error) {
-            console.error("Error fetching bus locations:", error);
+            } catch (error) {
+                console.error("Error fetching bus locations:", error);
+            }
         }
-    }
+
 
     async fetchAndDisplayServiceAlerts() {
         try {
