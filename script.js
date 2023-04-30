@@ -14,7 +14,6 @@ const locationSetter = new LocationSetter();
 
 export async function initMap() {
     const { Map } = await google.maps.importLibrary("maps", "places");
-
     const isMobile = window.innerWidth <= 800;
 
     map = new Map(document.getElementById("map"), {
@@ -57,6 +56,8 @@ export async function initMap() {
             const data = await response.json();
             // console.log("Vilkku bus data:", data);
 
+
+
             for (const busEntity of data.entity) {
                 const bus = busEntity.vehicle;
                 const position = {
@@ -75,14 +76,8 @@ export async function initMap() {
                         }`,
                     });
 
-                    const busNumber = busEntity.vehicle.trip.routeId;
-                    const labelOverlay = new LabelOverlay(position, busNumber, map, infoWindow);
-
-                    labelOverlay.setClickListener(() => {
-                        infoWindow.open(map, labelOverlay);
-                        console.log("Bus icon clicked");
-                    });
-
+                    const routeId = busEntity.vehicle.trip.routeId;
+                    const labelOverlay = new LabelOverlay(position, routeId, map, infoWindow);
 
                     busData[busId] = {
                         infoWindow: infoWindow,
@@ -308,111 +303,67 @@ export async function initMap() {
     updateTripUpdates();
 }
 
+function createBusIconWithNumber(number) {
+    const canvas = document.createElement('canvas');
+    canvas.width = 32;
+    canvas.height = 32;
+    const ctx = canvas.getContext('2d');
+
+    // Draw the bus icon
+    const img = new Image();
+    img.src = 'img/bluecircle.png';
+    ctx.drawImage(img, 0, 0, 32, 32);
+
+    // Draw the number on top of the bus icon
+    ctx.font = '14px Arial';
+    ctx.fillStyle = 'white';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText(number, 16, 16);
+
+    // Convert the canvas to a data URL
+    const dataURL = canvas.toDataURL('image/png');
+    return dataURL;
+}
+
+
+
 function defineLabelOverlay() {
-    class LabelOverlay extends google.maps.OverlayView {
+    class LabelOverlay {
         constructor(position, label, map, infoWindow) {
-            super();
             this.position = position;
             this.label = label;
             this.infoWindow = infoWindow;
-            this.div = null;
-            this.setMap(map);
-        }
 
-        onAdd() {
-            const container = document.createElement("div");
-            container.style.position = "absolute";
-            container.style.zIndex = "1000";
-
-            const img = document.createElement("img");
-            img.src = "img/bluecircle.png";
-            img.style.width = "32px";
-            img.style.height = "32px";
-            img.style.cursor = 'pointer';
-            container.appendChild(img);
-
-            const label = document.createElement("div");
-            label.style.position = "absolute";
-            label.style.left = "50%";
-            label.style.top = "50%";
-            label.style.transform = "translate(-50%, -50%)";
-            label.style.fontSize = "14px";
-            label.style.fontWeight = "bold";
-            label.style.color = "white";
-            label.style.cursor = 'pointer';
-            label.textContent = this.label;
-            container.appendChild(label);
-
-            this.div = container;
-            const panes = this.getPanes();
-            panes.overlayLayer.appendChild(container);
-
-            container.style.cursor = 'pointer';
-            container.addEventListener("click", (e) => {
-                console.log("Container click event fired");
-                this.handleClick(e);
+            this.marker = new google.maps.Marker({
+                position: position,
+                map: map,
+                icon: {
+                    url: createBusIconWithNumber(label),
+                    scaledSize: new google.maps.Size(32, 32),
+                },
             });
 
-            container.addEventListener("mouseover", () => {
-                container.style.cursor = "pointer";
+            // Set the click listener for the marker
+            this.marker.addListener("click", () => {
+                this.infoWindow.open(map, this.marker);
             });
-
-            container.addEventListener("mouseout", () => {
-                container.style.cursor = "default";
-            });
-
-            container.addEventListener("click", (e) => this.handleClick(e));
-
-            img.addEventListener("click", (e) => this.handleClick(e));
-            label.addEventListener("click", (e) => this.handleClick(e));
-
         }
-
-        draw() {
-            const overlayProjection = this.getProjection();
-            const position = overlayProjection.fromLatLngToDivPixel(
-                this.position
-            );
-
-            this.div.style.left = `${position.x}px`;
-            this.div.style.top = `${position.y}px`;
-        }
-
-        onRemove() {
-            if (this.div) {
-                this.div.parentNode.removeChild(this.div);
-                this.div = null;
-            }
-        }
-
-        //* update the position
         updatePosition(position) {
             this.position = position;
-            if (this.div) {
-                const overlayProjection = this.getProjection();
-                const newPosition =
-                    overlayProjection.fromLatLngToDivPixel(position);
-                this.div.style.left = `${newPosition.x}px`;
-                this.div.style.top = `${newPosition.y}px`;
+            if (this.marker) {
+                this.marker.setPosition(position);
             }
         }
-
-        handleClick(e) {
-            console.log("LabelOverlay handleClick() called");
-            if (this.clickListener) {
-                this.clickListener();
-            }
-            if (e) {
-                e.stopPropagation();
-            }
-        }
-
 
         setClickListener(listener) {
-            this.clickListener = listener;
+            this.marker.addListener("click", () => {
+                if (listener) {
+                    listener();
+                }
+            });
         }
     }
-
     return LabelOverlay;
 }
 
