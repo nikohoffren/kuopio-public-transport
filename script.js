@@ -56,8 +56,6 @@ export async function initMap() {
             const data = await response.json();
             // console.log("Vilkku bus data:", data);
 
-
-
             for (const busEntity of data.entity) {
                 const bus = busEntity.vehicle;
                 const position = {
@@ -310,20 +308,19 @@ function createBusIconWithNumber(number) {
         canvas.height = 32;
         const ctx = canvas.getContext('2d');
 
-        // Draw the bus icon
         const img = new Image();
         img.src = 'img/bluecircle.png';
         img.onload = () => {
             ctx.drawImage(img, 0, 0, 32, 32);
 
-            // Draw the number on top of the bus icon
+            //* Draw the number on top of the bus icon
             ctx.font = '14px Arial';
             ctx.fillStyle = 'white';
             ctx.textAlign = 'center';
             ctx.textBaseline = 'middle';
             ctx.fillText(number, 16, 16);
 
-            // Convert the canvas to a data URL
+            //* Convert the canvas to a data URL
             const dataURL = canvas.toDataURL('image/png');
             resolve(dataURL);
         };
@@ -340,25 +337,27 @@ function defineLabelOverlay() {
             this.label = label;
             this.infoWindow = infoWindow;
 
-            // Set the marker without an icon first
+            //* Set the marker without an icon first
             this.marker = new google.maps.Marker({
                 position: position,
                 map: map,
             });
 
-            // Load the custom icon and update the marker
+            //* Load the custom icon and update the marker
             createBusIconWithNumber(label)
                 .then((iconDataURL) => {
                     this.marker.setIcon({
                         url: iconDataURL,
                         scaledSize: new google.maps.Size(32, 32),
+                        //* Set the offset to correct bus marker position
+                        anchor: new google.maps.Point(16, 17),
                     });
                 })
                 .catch((error) => {
                     console.error('Error creating bus icon:', error);
                 });
 
-            // Set the click listener for the marker
+            //* Set the click listener for the marker
             this.marker.addListener("click", () => {
                 this.infoWindow.open(map, this.marker);
             });
@@ -634,7 +633,7 @@ async function getUserLocation() {
                     map: map,
                     title: "Sijaintisi",
                     icon: {
-                        url: "http://maps.google.com/mapfiles/ms/icons/blue-dot.png",
+                        url: "http://maps.google.com/mapfiles/ms/icons/red-dot.png",
                     },
                 });
                 map.setCenter(pos);
