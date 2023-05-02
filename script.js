@@ -70,6 +70,7 @@ export async function initMap() {
     directionsRenderer.setMap(map);
     directionsRenderer.setOptions({ suppressPolylines: true });
 
+    //* create markers
     const markers = [
         [
             `<strong>Bike Taxi Kuopio</strong><br>Soita ja tilaa: 044 4410 520<br><a href="https://www.biketaxi.fi/hinnasto/?kaupunki=kuopio" target="_blank">www.biketaxi.fi</a>`,
