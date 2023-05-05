@@ -25,7 +25,7 @@ exports.handler = async (event, context) => {
 
     return {
       statusCode: 500,
-      body: "Error fetching XML data.",
+      body: "Error fetching XML data!",
     };
   }
 };
