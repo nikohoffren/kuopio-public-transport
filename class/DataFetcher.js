@@ -153,11 +153,24 @@ export default class DataFetcher {
 
             const data = await response.text();
             console.log("Vilkku bicycles data: " + data);
+
+            //* Check if the XML document has a root element
+            if (!data || data.trim() === "") {
+                console.error("The XML document is empty or not well-formed.");
+                return;
+            }
+
             const parser = new DOMParser();
             const xmlData = parser.parseFromString(data, "application/xml");
             const bicycleStations = xmlData.getElementsByTagName("marker");
 
             console.log("Number of bicycle stations:", bicycleStations.length);
+
+            //* Check if the parsed XML document has a root element
+            if (xmlData.documentElement.nodeName === "parsererror") {
+                console.error("XML parsing error: no root element found.");
+                return;
+            }
 
             for (const station of bicycleStations) {
                 const lat = parseFloat(station.getAttribute("lat"));
