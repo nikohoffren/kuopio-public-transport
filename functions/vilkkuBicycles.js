@@ -1,25 +1,31 @@
 const fetch = require("node-fetch");
+const axios = require("axios");
 
-exports.handler = async function (event, context) {
-    const apiUrl =
-        "https://kaupunkipyorat.kuopio.fi/tkhs-export-map.html?format=xml";
+exports.handler = async (event, context) => {
+  try {
+    const response = await axios.get("https://kaupunkipyorat.kuopio.fi/tkhs-export-map.html?format=xml", {
+      headers: {
+        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:89.0) Gecko/20100101 Firefox/89.0",
+      },
+    });
 
-    try {
-        const response = await fetch(apiUrl);
-        const data = await response.text();
+    const xmlData = response.data;
 
-        return {
-            statusCode: 200,
-            headers: {
-                "Content-Type": "application/xml",
-            },
-            body: data,
-        };
-    } catch (error) {
-        console.error("Error fetching VILKKU bicycle data:", error);
-        return {
-            statusCode: 500,
-            body: "An error occurred while fetching VILKKU bicycle data.",
-        };
-    }
+    console.log("Fetched XML data:", xmlData);
+
+    return {
+      statusCode: 200,
+      headers: {
+        "Content-Type": "application/xml",
+      },
+      body: xmlData,
+    };
+  } catch (error) {
+    console.error("Error fetching XML data:", error);
+
+    return {
+      statusCode: 500,
+      body: "Error fetching XML data.",
+    };
+  }
 };

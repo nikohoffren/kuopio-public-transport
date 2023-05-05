@@ -140,7 +140,7 @@ export default class DataFetcher {
     }
 
     async fetchAndDisplayVilkkuBicycles() {
-        const apiUrl = "/.netlify/functions/vilkkuBicycles";
+        const apiUrl = "/api/vilkkuBicycles";
 
         try {
             const response = await fetch(apiUrl);
