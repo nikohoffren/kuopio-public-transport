@@ -11,6 +11,7 @@ let endAutocomplete;
 let startInput;
 let endInput;
 let customPolyline;
+let followBus = false;
 
 const locationSetter = new LocationSetter();
 const LabelOverlay = defineLabelOverlay();
@@ -153,6 +154,14 @@ export async function initMap() {
     updateTripUpdates();
 }
 
+document.getElementById("followBusCheckbox").addEventListener("change", (event) => {
+    followBus = event.target.checked;
+});
+
+followBusCheckbox.addEventListener("change", (event) => {
+    dataFetcher.setShouldFollowBus(event.target.checked);
+});
+
 function updatePolylineOptions(isWalkingRoute) {
     directionsRenderer.setOptions({
         polylineOptions: {
@@ -261,7 +270,9 @@ function defineLabelOverlay() {
 
             //* Set the click listener for the marker
             this.marker.addListener("click", () => {
-                this.isFollowed = !this.isFollowed;
+                if (followBus) {
+                    this.isFollowed = !this.isFollowed;
+                }
                 if (onClick) {
                     onClick();
                 }

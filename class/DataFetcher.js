@@ -5,6 +5,16 @@ export default class DataFetcher {
         this.createBusIconWithNumber = createBusIconWithNumber;
         this.busData = busData;
         this.followedBusId = null;
+        this.shouldFollowBus = false;
+    }
+
+    setShouldFollowBus(newValue) {
+        this.shouldFollowBus = newValue;
+        //* If shouldFollowBus is set to false, also unset the followed bus
+        if (!newValue && this.followedBusId !== null) {
+            this.busData[this.followedBusId].labelOverlay.isFollowed = false;
+            this.followedBusId = null;
+        }
     }
 
     async fetchAndDisplayBusLocations() {
@@ -54,14 +64,16 @@ export default class DataFetcher {
                         this.map,
                         infoWindow,
                         () => {
-                            if (this.followedBusId !== null) {
-                                this.busData[
-                                    this.followedBusId
-                                ].labelOverlay.isFollowed = false;
+                            if (this.shouldFollowBus) {
+                                if (this.followedBusId !== null) {
+                                    this.busData[
+                                        this.followedBusId
+                                    ].labelOverlay.isFollowed = false;
+                                }
+                                this.followedBusId = busId;
+                                labelOverlay.isFollowed = true;
+                                this.map.setCenter(position);
                             }
-                            this.followedBusId = busId;
-                            this.map.setCenter(position);
-                            labelOverlay.isFollowed = true;
                         }
                     );
 
@@ -69,6 +81,10 @@ export default class DataFetcher {
                         infoWindow: infoWindow,
                         labelOverlay: labelOverlay,
                     };
+
+                    if (labelOverlay.isFollowed && this.shouldFollowBus) {
+                        this.map.setCenter(position);
+                    }
                 } else {
                     const infoWindow = this.busData[busId].infoWindow;
                     infoWindow.setContent(

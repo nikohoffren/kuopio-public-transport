@@ -60,6 +60,10 @@ h1 {
     font-size: 1.2rem;
 }
 
+.white-text {
+    color: white;
+}
+
 .link {
     text-decoration: none;
     height: 40px;
