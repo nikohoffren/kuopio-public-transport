@@ -1,0 +1,4239 @@
+openapi: 3.0.0
+info:
+  title: 'Backend API'
+  contact:
+    name: 'Jiri Vosecek'
+    url: 'https://www.freebike.com'
+    email: jiri.vosecek@freebike.com
+  version: '1.0'
+servers:
+  - url: 'https://tkhs-integration.azurewebsites.net/Services/Api'
+    description: 'Backend address'
+tags:
+  - name: Service Module
+    description: Requires Service User checkbox on for user using these endpoints.
+  - name: Service Module Tasks
+    description: Requires Service User checkbox on for user using these endpoints. Work with Tasks
+  - name: Service Module Repairs
+    description: Requires Service User checkbox on for user using these endpoints. Work with Repairs
+  - name: Service Module Spare Parts
+    description: Requires Service User checkbox on for user using these endpoints. Work with Spare Parts
+  - name: Customer Operation
+    description: Endpoints for operation available for all customers, requires Bearer token authorization. The identity of the customer for which the data should be operated is inferred from authentication information.
+  - name: General
+    description: General system info, public
+  - name: Map data
+    description: Public available map data and location detail. Provides all information for show map with bikes, locations, areas
+  - name: Authorization
+    description: Create Bearer token for authorized operations
+  - name: Call Center Operation
+    description: Special endpoints for operations available only for users with specific permission in Backend
+  - name: Rentals
+    description: "Rent bike endpoints, same for Service Users and regular customers <img src='rent-return-bike.png' alt='Rent/return bike' /><figcaption>Rent/return bike flow: (<a target='_blank' href='./rent-return-bike.png'>full scale</a>)</figcaption></figure>"
+  - name: Reports
+    description: Anonymized statistics
+paths:
+  /ExternalService/AddCreditEx:
+    post:
+      tags:
+        - Call Center Operation
+      summary: Add credit for given user
+      description: Users need to have permission for External web service – AddCreditEx to be able to invoke this function.
+      parameters:
+        - $ref: '#/components/parameters/lang'
+      requestBody:
+        content:
+          application/x-www-form-urlencoded:
+            schema:
+              type: object
+              title: TKAccountActivity
+              properties:
+                CustomerID:
+                  type: number
+                  example: 1123
+                ActivityTypeExternalID:
+                  type: string
+                  example: EXT_WS_CREDIT_CARD
+                Amount:
+                  type: number
+                  default: 0
+                  example: 10
+                DepositAmount:
+                  type: number
+                  default: 0
+                  example: 0
+                BonusAmount:
+                  type: number
+                  default: 0
+                  example: 0
+                Currency:
+                  type: number
+                  description: id of used currency, not necessary
+                EPaymentOrderID:
+                  type: string
+                  description: id of payment
+                Note:
+                  type: string
+                ExternalID:
+                  type: string
+                  example: x10
+                  description: custom id
+      responses:
+        204:
+          description: credit added
+        400:
+          description: Invalid value, error described
+  /report-rental-daily:
+    get:
+      tags:
+        - Reports
+      summary: Rentals for given day
+      description: Anonymized data about rentals for given day
+      parameters:
+        - $ref: '#/components/parameters/lang'
+        - name: dataDate
+          in: query
+          required: true
+          schema:
+            type: string
+            format: date
+            example: '2021-06-05'
+      responses:
+        200:
+          description: csv file to download
+  /Location/Map/Extended:
+    get:
+      tags:
+        - Map data
+      summary: Full map data
+      description: Complete map data without bikes locked outside of location, use also GetBikesOutOfLocation endpoint. Data might be filtered using latitude and longitude parameters to get reduced data
+      parameters:
+        - $ref: '#/components/parameters/lang'
+        - name: latitude1
+          in: query
+          description: square for limit retrieved data
+          required: false
+          schema:
+            type: number
+            example: 50.10
+        - name: longitude1
+          in: query
+          description: square for limit retrieved data
+          required: false
+          schema:
+            type: number
+            example: 15.70
+        - name: latitude2
+          in: query
+          description: square for limit retrieved data
+          required: false
+          schema:
+            type: number
+            example: 50.07
+        - name: longitude2
+          in: query
+          description: square for limit retrieved data
+          required: false
+          schema:
+            type: number
+            example: 16.00
+      responses:
+        '200':
+          description: 'Info about map data'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TKMapData'
+        '404':
+          description: 'Unknown path, fix parameters name'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TKNotFoundException'
+  '/{type}':
+    get:
+      tags:
+        - General
+      summary: 'Get articles'
+      description: Returns articles for given type
+      parameters:
+        - $ref: '#/components/parameters/pageNumber'
+        - name: type
+          in: path
+          description: 'News type'
+          required: true
+          schema:
+            type: string
+            enum:
+              - News
+              - Faqs
+              - Infos
+              - Contacts
+            example: News
+        - name: lang
+          in: query
+          description: 'Localized version of News is available, otherwise return News in default lang'
+          required: true
+          schema:
+            type: string
+          example: en
+        - name: externalClientId
+          in: query
+          description: 'Type of client, case insensitive'
+          required: true
+          schema:
+            default: iphone
+            enum:
+              - web
+              - android
+              - iphone
+      responses:
+        '200':
+          description: 'News for given parameters'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TKInfos'
+        '404':
+          description: 'Unknown path, fix parameters name'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TKNotFoundException'
+        '405':
+          description: 'Incorrect page number, try pageNumber=1'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TKServiceException'
+  /Bike/GetBikesAtLocation:
+    get:
+      tags:
+        - 'Map data'
+      summary: 'Bikes in this location (not in hardware lock)'
+      description: Bike position ought to be showed on its coords if are available and not exactly on the location marker
+      parameters:
+        - $ref: '#/components/parameters/lang'
+        - $ref: '#/components/parameters/locationId'
+      responses:
+        '200':
+          description: 'Bikes returned to Location and not in Hardware Lock'
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/TKBike'
+        '404':
+          description: 'Unknown path, fix parameters name'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TKNotFoundException'
+  /Bike/GetBikesOutOfLocation:
+    get:
+      tags:
+        - Map data
+      summary: Bikes locked out of any Location
+      description: All bikes available for rent locked out of location
+      parameters:
+        - $ref: '#/components/parameters/lang'
+      responses:
+        '200':
+          description: 'Bikes returned to coordinates'
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/TKBike'
+        '404':
+          description: 'Unknown path, fix parameters name'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TKNotFoundException'
+  /Setting:
+    get:
+      tags:
+        - General
+      summary: System setting
+      description: Backend system configuration
+      responses:
+        '200':
+          description: 'Backend setting'
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  allOf: [
+                    { $ref: '#/components/schemas/TKSetting_RENTAL_ALLOW_EXTERNAL_RENTAL' },
+                    { $ref: '#/components/schemas/TKSetting_RENTAL_ALLOW_EXTERNAL_RETURN' },
+                    { $ref: '#/components/schemas/TKSetting_RENTAL_EXTERNAL_MAX_LOCATION_DISTANCE' },
+                    { $ref: '#/components/schemas/TKSetting_RENTAL_ALLOW_EXTERNAL_RENTAL_ANYWHERE' },
+                    { $ref: '#/components/schemas/TKSetting_RENTAL_ALLOW_EXTERNAL_RETURN_ANYWHERE' },
+                    { $ref: '#/components/schemas/TKSetting_RENTAL_EXTERNAL_CONFIRMATION_REQUIRE' },
+                    { $ref: '#/components/schemas/TKSetting_RENTAL_EXTERNAL_MAX_BIKE_DISTANCE_METRES' },
+                    { $ref: '#/components/schemas/TKSetting_RESERVATION_PREAUTH_DISTANCE' },
+                    { $ref: '#/components/schemas/TKSetting_ACTIVE_SEASON_START' },
+                    { $ref: '#/components/schemas/TKSetting_ACTIVE_SEASON_END' },
+                    { $ref: '#/components/schemas/TKSetting_ACTIVE_FREEBIKE_COUNT' },
+                    { $ref: '#/components/schemas/TKSetting_GBFS_URL' },
+                    { $ref: '#/components/schemas/TKSetting_GBFS_FREEBIKE_BATTERY_RANGE_CORRECTION' },
+                    { $ref: '#/components/schemas/TKSetting_GBFS_MAX_RANGE_METERS' },
+                    { $ref: '#/components/schemas/TKSetting_GBFS_IOS_DISCOVERY_URI' },
+                    { $ref: '#/components/schemas/TKSetting_GBFS_ANDROID_DISCOVERY_URI' },
+                    { $ref: '#/components/schemas/TKSetting_GBFS_ANDROID_STORE_URI' },
+                    { $ref: '#/components/schemas/TKSetting_GBFS_IOS_STORE_URI' },
+                    { $ref: '#/components/schemas/TKSetting_GBFS_EMAIL' },
+                    { $ref: '#/components/schemas/TKSetting_GBFS_TELEPHONE' },
+                    { $ref: '#/components/schemas/TKSetting_RESERVATION_PREAUTH_TIMEOUT' }
+                  ]
+  /Setting/Timezone:
+    get:
+      tags:
+        - General
+      summary: System Timezone
+      description: 'Returns information about the time zone currently used by the server. Contains standardized ID, Windows ID and current offset from UTC in seconds.'
+      responses:
+        '200':
+          description: 'Timezone settings for system'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Timezone'
+  /Area:
+    get:
+      tags:
+        - Map data
+      summary: Areas
+      description: Data about areas in system, ought to be painted as polygons. Colors for Geofence areas are defined in Frontend endpoint /setting.
+      parameters:
+        - $ref: '#/components/parameters/lang'
+      responses:
+        '200':
+          description: 'List of Areas with points'
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/TKArea'
+  /EBikeProfiles:
+    get:
+      tags:
+        - Map data
+      summary: EBike Profiles
+      description: Attributes CpuVersion, GPSMessageInterval, ServiceMessageInterval, BlockTime, ServerTimeout and RetryCount are always null if non-authorized.
+      parameters:
+        - $ref: '#/components/parameters/lang'
+      responses:
+        '200':
+          description: 'List of EBike Profiles'
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/TKEBikeProfile'
+  /Token:
+    post:
+      tags:
+        - Authorization
+      summary: Authorization request
+      description: 'Get new token for Authorized requests. User Body for new Token, use query params for renew token.'
+      parameters:
+        - name: grant_type
+          in: query
+          description: 'Value ''refresh_token'' must be provided'
+          schema:
+            type: string
+            default: refresh_token
+        - name: refresh_token
+          in: query
+          description: 'refresh token retrieved from /Token earlier'
+          schema:
+            type: string
+          example: 8a9f70ab98844fb88a381c974627c0c0
+        - name: client_id
+          in: query
+          description: 'provided client_id'
+          schema:
+            type: string
+          example: iphone
+        - name: client_secret
+          in: query
+          description: 'provided client_secret'
+          schema:
+            type: string
+          example: qImYrunr0+1pT4KatZHYWYCS82FE8bIzZZpw6IZT6pKNDjd2soth25J6ovoajUL9+yOtE
+        - $ref: '#/components/parameters/lang'
+      requestBody:
+        content:
+          application/x-www-form-urlencoded:
+            schema:
+              properties:
+                grant_type:
+                  description: 'Value ''password'' must be provided'
+                  type: string
+                  example: password
+                username:
+                  description: 'card number'
+                  type: string
+                  example: '44587'
+                password:
+                  description: 'card pin'
+                  type: string
+                  example: '10001'
+                client_id:
+                  description: 'provided client_id'
+                  type: string
+                  example: iphone
+                client_secret:
+                  description: 'provided client_secret'
+                  type: string
+                  example: qImYrunr0+1pT4KatZHYWYCS82FE8bIzZZpw6IZT6pKNDjd2soth25J6ovoajUL9+yOtE
+                lang:
+                  description: 'lang for localised response'
+                  type: string
+                  example: cs
+              type: object
+      responses:
+        '200':
+          description: 'Access token'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/KITEToken'
+        '400':
+          description: 'Incorrect card number or card pin or invalid client_id or client_secret'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TKErrorException'
+  /Users/RemoveCreditEx:
+    put:
+      tags:
+        - Call Center Operation
+      summary: Subtract credit of the customer.
+      description: The function only allow one of parameters  amount, depositAmount or bonusAmount  at a time. Users need to have permission External web service – RemoveCreditEx to be able to invoke this function.
+      parameters:
+        - $ref: '#/components/parameters/lang'
+        - name: activityType
+          in: query
+          schema:
+            type: string
+          description: Account activity types
+          example: CREDIT_DEBIT
+          required: true
+        - name: amount
+          in: query
+          schema:
+            nullable: true
+            type: number
+          description: Amount
+          example: 10
+          required: true
+        - name: depositAmount
+          in: query
+          schema:
+            type: number
+            nullable: true
+          description: Deposit Amount
+          example: null
+          required: true
+        - name: bonusAmount
+          in: query
+          schema:
+            type: number
+            nullable: true
+          description: Bonus Amount
+          example: null
+          required: true
+        - name: currency
+          in: query
+          schema:
+            type: string
+          description: Currency
+          example: CZK
+          required: true
+        - name: customerID
+          in: query
+          schema:
+            type: integer
+          description: Customer ID
+          required: true
+        - name: note
+          in: query
+          schema:
+            nullable: true
+            type: string
+          description: Note
+          example: null
+          required: true
+        - $ref: '#/components/parameters/SparePartExternalId'
+      responses:
+        '200':
+          description: 'Customer data detail'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TKCustomer'
+        '400':
+          description: 'Problem with detail information'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TKServiceException'
+  /User:
+    get:
+      tags:
+        - Customer Operation
+      summary: Get customer data
+      parameters:
+        - $ref: '#/components/parameters/lang'
+      responses:
+        '200':
+          description: 'Customer data detail'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TKCustomer'
+    put:
+      tags:
+        - Customer Operation
+      summary: Update customer data
+      description: The JSON-serialized User object should be put in the request body and the request content type should be set to application/json
+      parameters:
+        - $ref: '#/components/parameters/lang'
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TKCustomer'
+      responses:
+        '204':
+          description: 'Account updated, response is empty'
+        '404':
+          description: 'Unknown path, fix parameters name'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TKNotFoundException'
+        '409':
+          description: 'The data were concurrently updated by another user. Use GET /User to retrieve user data.'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TKServiceException'
+  /Bike/BikeTypes:
+    get:
+      tags:
+        - Map data
+      summary: get list of bike types
+      description: array of BikeType to show in help section and optionally custom bike detail image and map icon
+      parameters:
+        - $ref: '#/components/parameters/lang'
+      responses:
+        200:
+          description: bike types list
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/TKBikeType'
+  /Bike/QR:
+    get:
+      tags:
+        - Map data
+      summary: Get Bike info by QR
+      description: Load bike detail based on its BikeIdentifier
+      parameters:
+        - $ref: '#/components/parameters/lang'
+        - name: bikeIdentifier
+          in: query
+          schema:
+            type: string
+      responses:
+        200:
+          description: Bike info
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TKBike'
+  /User/Bike/OpenBox:
+    get:
+      tags:
+        - IoT Bike communication
+      summary: Open bike box to remove battery
+      description: Send request for IoT message to bike to open battery box, user have to be Service user
+      parameters:
+        - name: bikeIdentifier
+          in: query
+          schema:
+            type: string
+      responses:
+        200:
+          description: OK
+  /User/Bike/GetInfo:
+    get:
+      tags:
+        - IoT Bike communication
+      summary: Get bike info
+      description: Send request for IoT message to bike to return bike status data, user have to be Service user
+      parameters:
+        - name: bikeIdentifier
+          in: query
+          schema:
+            type: string
+      responses:
+        200:
+          description: json data from bike
+  /User/Bike/RegisterCard:
+    get:
+      tags:
+        - Customer Operation
+      summary: 'Register new RFID card to user'
+      description: "<h2>Diagram</h2><img src='register-card.png' alt='Register card bike' /><figcaption>Register card bike flow: (<a target='_blank' href='./register-card.png'>full scale</a>)</figcaption></figure>"
+      parameters:
+        - name: bikeIdentifier
+          description: qr code of bike
+          in: query
+          schema:
+            type: string
+        - name: pin
+          in: query
+          description: current card pin
+          schema:
+            type: integer
+        - name: cardNumber
+          in: query
+          description: current card number
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: 'Register process started, bike should be blinking blue light'
+  /Bike:
+    get:
+      tags:
+        - Service Module
+      summary: Get Bike detail
+      description: Technical details of bike
+      parameters:
+        - $ref: '#/components/parameters/lang'
+        - $ref: '#/components/parameters/bikeId'
+      responses:
+        200:
+          description: Technical bike details
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TKBikeServiceData'
+  /AllBikes:
+    get:
+      summary: Get all bikes
+      description: Returns bikes in all states
+      tags:
+        - Service Module
+      parameters:
+        - $ref: '#/components/parameters/lang'
+      responses:
+        200:
+          description: list of all bikes
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TKBikeAllBikes'
+  /Task:
+    get:
+      tags:
+        - Service Module Tasks
+      summary: Task for user, filterable
+      description: Show all available task for current user, assigned to this user or available to read
+      parameters:
+        - $ref: '#/components/parameters/lang'
+        - $ref: '#/components/parameters/pageNumber'
+        - name: ID
+          in: query
+          schema:
+            type: integer
+        - name: TaskTypeID
+          in: query
+          schema:
+            type: integer
+        - name: StateID
+          in: query
+          schema:
+            type: integer
+        - name: CreatedForm
+          in: query
+          schema:
+            type: string
+            format: date-time
+        - name: CreatedUntil
+          in: query
+          schema:
+            type: string
+            format: date-time
+        - name: AssignedToID
+          in: query
+          schema:
+            type: integer
+        - name: EquipmentTypeID
+          in: query
+          schema:
+            type: integer
+        - name: EquipmentID
+          in: query
+          schema:
+            type: integer
+        - name: PriorityID
+          in: query
+          schema:
+            type: integer
+        - name: LocationID
+          in: query
+          schema:
+            type: integer
+      responses:
+        200:
+          description: list of service tasks
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  PageNumber:
+                    title: 'Current page number'
+                    type: integer
+                    example: 2
+                  PageTotal:
+                    title: 'Total pages'
+                    type: integer
+                    example: 4
+                  ServiceTasks:
+                    title: 'List of tasks'
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/TKServiceTask'
+  /User/Groups:
+    get:
+      tags:
+        - Customer Operation
+      summary: get list of available user groups
+      description: retrieve list of groups, needed for registration system to assign user to some group in registration process
+      parameters:
+        - $ref: '#/components/parameters/lang'
+      responses:
+        200:
+          description: list of groups
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/TKUserGroup'
+  /User/Task:
+    get:
+      tags:
+        - Service Module Tasks
+      summary: Service tasks for user
+      description: Requires Service User permissions, filtering not available, user `/Task` endpoint for filtering
+      parameters:
+        - $ref: '#/components/parameters/lang'
+        - $ref: '#/components/parameters/pageNumber'
+      responses:
+        200:
+          description: list of service tasks
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  PageNumber:
+                    title: 'Current page number'
+                    type: integer
+                    example: 2
+                  PageTotal:
+                    title: 'Total pages'
+                    type: integer
+                    example: 4
+                  ServiceTasks:
+                    title: 'List of tasks'
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/TKServiceTask'
+  /User/Task/{id}:
+    get:
+      tags:
+        - Service Module Tasks
+      summary: Get service task detail by `id`
+      parameters:
+        - name: id
+          in: path
+          description: task id
+          required: true
+          schema:
+            type: integer
+      responses:
+        200:
+          description: list of service tasks
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TKServiceTask'
+  /Task/Update:
+    put:
+      summary: Update task
+      tags:
+        - Service Module Tasks
+      parameters:
+        - $ref: '#/components/parameters/lang'
+        - $ref: '#/components/parameters/tasktypeId'
+        - $ref: '#/components/parameters/stateId'
+        - $ref: '#/components/parameters/Task_priorityId'
+        - $ref: '#/components/parameters/Task_assignedtoId'
+        - $ref: '#/components/parameters/SparePart_EquipmentTypeId'
+        - $ref: '#/components/parameters/Task_equipmentId'
+        - $ref: '#/components/parameters/Task_additionalinfo'
+        - $ref: '#/components/parameters/locationId'
+        - $ref: '#/components/parameters/Task_note'
+        - $ref: '#/components/parameters/Task_escalate'
+        - name: id
+          description: task id
+          in: query
+          required: true
+          schema:
+            type: integer
+      responses:
+        200:
+          description: changed service task
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TKServiceTask'
+  /Task/Create:
+    post:
+      summary: Create new service task
+      tags:
+        - Service Module Tasks
+      parameters:
+        - $ref: '#/components/parameters/lang'
+        - $ref: '#/components/parameters/stateId'
+        - $ref: '#/components/parameters/SparePart_EquipmentTypeId'
+        - $ref: '#/components/parameters/locationId'
+        - $ref: '#/components/parameters/Task_assignedtoId'
+        - $ref: '#/components/parameters/tasktypeId'
+        - $ref: '#/components/parameters/Task_priorityId'
+        - $ref: '#/components/parameters/Task_equipmentId'
+        - $ref: '#/components/parameters/Task_additionalinfo'
+        - $ref: '#/components/parameters/Task_note'
+        - $ref: '#/components/parameters/Task_escalate'
+      responses:
+        200:
+          description: created service task
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TKServiceTask'
+  /Roles:
+    get:
+      summary: Available roles
+      tags:
+        - Service Module
+      parameters:
+        - $ref: '#/components/parameters/lang'
+        - $ref: '#/components/parameters/pageNumber'
+      responses:
+        200:
+          description: List of roles
+          content:
+            application/json:
+              schema:
+                properties:
+                  PageNumber:
+                    title: 'Current page number'
+                    type: integer
+                    example: 2
+                  PageTotal:
+                    title: 'Total pages'
+                    type: integer
+                    example: 4
+                  ServiceTasks:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/UserRole'
+  /Users:
+    get:
+      summary: Return the list of users
+      description: The caller user must have the permission Users = 33 to call.
+      tags:
+        - Service Module
+      parameters:
+        - $ref: '#/components/parameters/lang'
+        - $ref: '#/components/parameters/pageNumber'
+        - name: isServiceMan
+          in: query
+          schema:
+            type: boolean
+      responses:
+        200:
+          description: List of users
+          content:
+            application/json:
+              schema:
+                properties:
+                  PageNumber:
+                    title: 'Current page number'
+                    type: integer
+                    example: 2
+                  PageTotal:
+                    title: 'Total pages'
+                    type: integer
+                    example: 4
+                  List:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/User'
+  /Task/Repair:
+    get:
+      tags:
+        - Service Module Repairs
+      summary: Get list of repairs
+      description: filtering by a lot of ids
+      parameters:
+        - $ref: '#/components/parameters/lang'
+        - $ref: '#/components/parameters/pageNumber'
+        - $ref: '#/components/parameters/TaskTaskID'
+        - $ref: '#/components/parameters/Task_equipmentTypeID'
+        - name: repairID
+          in: query
+          required: false
+          schema:
+            type: integer
+        - name: faultTypeID
+          in: query
+          required: false
+          schema:
+            type: integer
+        - name: stateID
+          in: query
+          required: false
+          schema:
+            type: integer
+        - name: equipmentID
+          in: query
+          required: false
+          schema:
+            type: integer
+        - name: maintenanceOperationID
+          in: query
+          required: false
+          schema:
+            type: integer
+      responses:
+        200:
+          description: List of repaires
+          content:
+            application/json:
+              schema:
+                properties:
+                  PageNumber:
+                    title: 'Current page number'
+                    type: integer
+                    example: 2
+                  PageTotal:
+                    title: 'Total pages'
+                    type: integer
+                    example: 4
+                  ServiceTasks:
+                    type: array
+                    format: array
+                    items:
+                      $ref: '#/components/schemas/ExtendedTKRepair'
+  /Task/Repair/Create:
+    post:
+      tags:
+        - Service Module Repairs
+      summary: Create repair
+      parameters:
+        - $ref: '#/components/parameters/lang'
+      requestBody:
+        content:
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/TKRepair'
+      responses:
+        204:
+          description: Created repair
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ExtendedTKRepair'
+  /Task/Repair/RemoveSparePart:
+    delete:
+      tags:
+        - Service Module Repairs
+      summary: Remove spare part from repair
+      parameters:
+        - $ref: '#/components/parameters/lang'
+        - $ref: '#/components/parameters/SparePartID'
+        - $ref: '#/components/parameters/repairID'
+      responses:
+        204:
+          description: OK
+  /Task/Repair/AddSparePart:
+    post:
+      summary: Add spare part to repair
+      tags:
+        - Service Module Repairs
+      parameters:
+        - $ref: '#/components/parameters/lang'
+        - $ref: '#/components/parameters/SparePartID'
+        - $ref: '#/components/parameters/repairID'
+        - name: count
+          required: false
+          in: query
+          description: number of this spare parts used in this repair, default 1
+          schema:
+            type: integer
+      responses:
+        204:
+          description: OK
+        400:
+          description: Combination already exist
+  /Task/AddRepair:
+    post:
+      summary: Add repair to task
+      tags:
+        - Service Module Repairs
+      parameters:
+        - $ref: '#/components/parameters/lang'
+        - $ref: '#/components/parameters/TaskTaskID'
+        - $ref: '#/components/parameters/repairID'
+      responses:
+        204:
+          description: OK
+  /Task/RemoveRepair:
+    delete:
+      summary: Remove repair from task
+      tags:
+        - Service Module Repairs
+      parameters:
+        - $ref: '#/components/parameters/lang'
+        - $ref: '#/components/parameters/TaskTaskID'
+        - $ref: '#/components/parameters/repairID'
+      responses:
+        204:
+          description: OK
+  /Task/Repair/{repairID}:
+    delete:
+      tags:
+        - Service Module Repairs
+      summary: Delete repair by repair ID
+      parameters:
+        - $ref: '#/components/parameters/lang'
+        - $ref: '#/components/parameters/repairIDPath'
+      responses:
+        204:
+          description: OK
+    put:
+      summary: Update repair
+      tags:
+        - Service Module Repairs
+      parameters:
+        - $ref: '#/components/parameters/lang'
+        - $ref: '#/components/parameters/repairIDPath'
+      requestBody:
+        content:
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/TKRepair'
+      responses:
+        204:
+          description: OK
+  /Task/Repair/FaultType:
+    get:
+      tags:
+        - Service Module
+      summary: Return list of fault types
+      parameters:
+        - $ref: '#/components/parameters/lang'
+        - $ref: '#/components/parameters/Task_equipmentTypeID'
+      responses:
+        200:
+          description: List of fault types
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/TKFaultType'
+  /Task/Repair/MaintenanceOperation:
+    get:
+      tags:
+        - Service Module
+      summary: Return list of maintenance operation
+      parameters:
+        - $ref: '#/components/parameters/lang'
+        - $ref: '#/components/parameters/pageNumber'
+        - $ref: '#/components/parameters/Task_equipmentTypeID'
+      responses:
+        200:
+          description: List of maintenance operations
+          content:
+            application/json:
+              schema:
+                properties:
+                  PageNumber:
+                    title: 'Current page number'
+                    type: integer
+                    example: 2
+                  PageTotal:
+                    title: 'Total pages'
+                    type: integer
+                    example: 4
+                  ServiceTasks:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/TKMaintenanceOperation'
+
+  /Task/Repair/State:
+    get:
+      tags:
+        - Service Module Repairs
+      summary: Return list of repair states
+      parameters:
+        - $ref: '#/components/parameters/lang'
+      responses:
+        200:
+          description: List of repair types
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/TKRepairState'
+  /Task/Repair/SparePart/Count:
+    put:
+      tags:
+        - Service Module Repairs
+      summary: Update used spare parts
+      description: Change number of used spareparts
+      parameters:
+        - $ref: '#/components/parameters/lang'
+        - $ref: '#/components/parameters/repairID'
+        - $ref: '#/components/parameters/SparePartID'
+        - name: count
+          required: true
+          in: query
+          description: number of this spare parts used in this repair, default 1
+          schema:
+            type: integer
+      responses:
+        204:
+          description: OK
+  /Task/Repair/SparePart/{sparePartID}:
+    delete:
+      tags:
+        - Service Module Spare Parts
+      summary: Delete spare part
+      parameters:
+        - $ref: '#/components/parameters/lang'
+        - $ref: '#/components/parameters/SparePartIDPath'
+      responses:
+        200:
+          description: OK
+        400:
+          description: Can not delete spare part
+          content:
+            application/json:
+              schema:
+                properties:
+                  Message:
+                    example: Given spare part does not exist
+    put:
+      summary: Update spare part
+      tags:
+        - Service Module Spare Parts
+      parameters:
+        - $ref: '#/components/parameters/SparePartIDPath'
+        - $ref: '#/components/parameters/lang'
+        - $ref: '#/components/parameters/SparePart_EquipmentTypeId'
+        - $ref: '#/components/parameters/SparePartExternalId'
+        - $ref: '#/components/parameters/SparePartDescription'
+      responses:
+        200:
+          description: created spare part
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TKSparePart'
+  /Task/Repair/SparePart:
+    post:
+      summary: Create new spare part
+      tags:
+        - Service Module Spare Parts
+      parameters:
+        - $ref: '#/components/parameters/lang'
+        - $ref: '#/components/parameters/SparePart_EquipmentTypeId'
+        - $ref: '#/components/parameters/SparePartExternalId'
+        - $ref: '#/components/parameters/SparePartDescription'
+      responses:
+        200:
+          description: created spare part
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TKSparePart'
+    get:
+      summary: Return list of available spare parts
+      tags:
+        - Service Module Spare Parts
+      parameters:
+        - $ref: '#/components/parameters/lang'
+        - $ref: '#/components/parameters/pageNumber'
+      responses:
+        200:
+          description: List of available spare parts
+          content:
+            application/json:
+              schema:
+                properties:
+                  PageNumber:
+                    title: 'Current page number'
+                    type: integer
+                    example: 2
+                  PageTotal:
+                    title: 'Total pages'
+                    type: integer
+                    example: 4
+                  ServiceTasks:
+                    title: 'List of spare parts'
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/TKSparePart'
+  /Service/EBikeStates:
+    get:
+      tags:
+        - Service Module
+      summary: List EBike states
+      parameters:
+        - $ref: '#/components/parameters/lang'
+      responses:
+        200:
+          description: Available ebike states
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/TKEBikeState'
+  /Service/BikeStates:
+    get:
+      tags:
+        - Service Module
+      summary: List bike states
+      parameters:
+        - $ref: '#/components/parameters/lang'
+      responses:
+        200:
+          description: available bike states
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/TKBikeState'
+  /Service/Bike/State:
+    put:
+      tags:
+        - Service Module
+      summary: Change bike state
+      description: Requires Service user, stateId from `/BikeStates` endpoint
+      parameters:
+        - $ref: '#/components/parameters/lang'
+        - $ref: '#/components/parameters/bikeId'
+        - $ref: '#/components/parameters/stateId'
+      responses:
+        200:
+          description: OK
+  /Task/State:
+    get:
+      summary: Get task states
+      description: Available task states
+      tags:
+        - Service Module Tasks
+      parameters:
+        - $ref: '#/components/parameters/lang'
+      responses:
+        200:
+          description: list of states
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TKTaskState'
+  /Task/Priority:
+    get:
+      summary: Get task priorities
+      description: Available task priorities
+      tags:
+        - Service Module Tasks
+      parameters:
+        - $ref: '#/components/parameters/lang'
+      responses:
+        200:
+          description: list of priorities
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TKTaskPriority'
+  /Task/Equipment:
+    get:
+      tags:
+        - Service Module Tasks
+      summary: Get Equipment for task
+      parameters:
+        - $ref: '#/components/parameters/lang'
+        - $ref: '#/components/parameters/Task_equipmentTypeID'
+      responses:
+        200:
+          description: List of equipment by type id (list of bikes, stations etc.)
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/TKEquipment'
+  /Task/EquipmentType:
+    get:
+      summary: Get Equipment Types
+      description: Available equpiment types (bike, station, location, ....)
+      tags:
+        - Service Module
+      parameters:
+        - $ref: '#/components/parameters/lang'
+      responses:
+        200:
+          description: list of equipment types
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TKEquipmentType'
+  /Task/TaskType:
+    get:
+      summary: Task types
+      tags:
+        - Service Module Tasks
+      description: Filter by `equipmentTypeID`
+      parameters:
+        - $ref: '#/components/parameters/lang'
+        - $ref: '#/components/parameters/Task_equipmentTypeID'
+      responses:
+        200:
+          description: List of task type for given equipment type id
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/TKTaskType'
+  /User/Cards:
+    get:
+      tags:
+        - Customer Operation
+      summary: Get customer cards
+      parameters:
+        - $ref: '#/components/parameters/lang'
+      responses:
+        '200':
+          description: 'List of assigned cards, filled RfidCardNumber means RFID card for rent bikes'
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/TKCard'
+  /User/ContractState:
+    put:
+      tags:
+        - Customer Operation
+      summary: Close/Cancel contract
+      description: Change contract belongs to current user
+      parameters:
+        - $ref: '#/components/parameters/lang'
+        - name: contractId
+          in: query
+          required: true
+          description: Contract ID from /User/Contracts response
+          schema:
+            type: number
+          example: 42
+        - name: stateCode
+          in: query
+          required: true
+          description: New state code, 3 (Closed, credit will not be returned), 4 (Cancelled, possible only if no rental has been started, credit will be returned to user account)
+          schema:
+            type: number
+            enum:
+              - 3
+              - 4
+      responses:
+        200:
+          description: 'Contract closed or cancelled'
+        400:
+          description: 'Invalid request. Reason in exception detail.'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TKServiceException'
+  /User/Contracts:
+    get:
+      tags:
+        - Customer Operation
+      summary: 'Get customer contracts'
+      description: Active contracts might be closed or cancelled using /User/ContractState endpoint
+      parameters:
+        - $ref: '#/components/parameters/lang'
+        - $ref: '#/components/parameters/pageNumber'
+      responses:
+        '200':
+          description: 'Customers contracts'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TKContracts'
+        '404':
+          description: 'Unknown path, fix parameters name'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TKNotFoundException'
+        '405':
+          description: 'Incorrect page number, try pageNumber=1'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TKServiceException'
+  /User/RentalType:
+    put:
+      tags:
+        - Customer Operation
+      summary: Change Rental type
+      description: Change default rental type for current customer
+      parameters:
+        - $ref: '#/components/parameters/lang'
+        - name: RentalTypeCode
+          in: query
+          schema:
+            type: integer
+      responses:
+        204:
+          description: OK
+  /User/Rental/{rentalId}:
+    get:
+      tags:
+        - Customer Operation
+      summary: Rental detail by ID
+      parameters:
+        - $ref: '#/components/parameters/lang'
+        - $ref: '#/components/parameters/rentalIdPath'
+      responses:
+        200:
+          description: Rental object
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TKRental'
+  /User/Rentals:
+    get:
+      tags:
+        - Customer Operation
+      summary: Customer rentals
+      description: List of customer rentals, filter by `statusCode` property
+      parameters:
+        - $ref: '#/components/parameters/lang'
+        - $ref: '#/components/parameters/pageNumber'
+        - name: statusCode
+          in: query
+          description: Status of the retrieved rentals. Can be omitted to retrieve all rentals.
+          schema:
+            description: Active, Closed, To be solved, Paused
+            type: integer
+            enum:
+              - 1
+              - 2
+              - 3
+              - 4
+          example: 1
+      responses:
+        '200':
+          description: 'Customers rental'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TKRentals'
+        '404':
+          description: 'Unknown path, fix parameters name'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TKNotFoundException'
+        '405':
+          description: 'Incorrect page number, try pageNumber=1'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TKServiceException'
+  /User/AccountActivities:
+    get:
+      tags:
+        - Customer Operation
+      summary: Get customer account activities
+      description: Accounting of rentals, activating contracts, pays by credit card etc.
+      parameters:
+        - $ref: '#/components/parameters/lang'
+        - $ref: '#/components/parameters/pageNumber'
+      responses:
+        '200':
+          description: 'Customers account activities'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TKAccountActivities'
+        '404':
+          description: 'Unknown path, fix parameters name'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TKNotFoundException'
+        '405':
+          description: 'Incorrect page number, try pageNumber=1'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TKServiceException'
+  /Rental/Type:
+    get:
+      tags:
+        - 'Map data'
+      summary: Rental types
+      description: 'List of available Rental types. Check frontend api/setting DisabledRentalTypes property to exclude option by RentalTypeCode'
+      parameters:
+        - $ref: '#/components/parameters/lang'
+      responses:
+        '200':
+          description: 'Rental types'
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/TKRentalType'
+        '404':
+          description: 'Unknown path, fix parameters name'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TKNotFoundException'
+  /EBikeMotorProfiles:
+    get:
+      tags:
+        - Map data
+      summary: 'List of EBike motor profiles'
+      description: Motor power is stronger with increasing number
+      parameters:
+        - $ref: '#/components/parameters/lang'
+      responses:
+        '200':
+          description: 'EBike motor profiles'
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/TKEBikeMotorProfile'
+        '404':
+          description: 'Unknown path, fix parameters name'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TKNotFoundException'
+  /Rental:
+    post:
+      tags:
+        - Rentals
+      summary: 'Rent bike'
+      description: Rent any bike locked outside of station hardware lock. For rent bikes in hardware lock use `/Reservation` endpoint
+      parameters:
+        - $ref: '#/components/parameters/lang'
+        - $ref: '#/components/parameters/bikeId'
+        - $ref: '#/components/parameters/spikeId'
+        - name: rentalType
+          in: query
+          description: Leave empty to use default rental type according to current customer.
+          schema:
+            description: without engine, with engine
+            type: integer
+            nullable: true
+            default: 1
+            enum:
+              - 0
+              - 1
+      responses:
+        '200':
+          description: 'Account updated, response is empty'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TKRentalResponse'
+        '404':
+          description: 'Unknown path, fix parameters name'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TKNotFoundException'
+  /Rental/ReturnBike:
+    put:
+      tags:
+        - Rentals
+      summary: Return bike
+      description: To coords or to location except from hardware lock
+      parameters:
+        - $ref: '#/components/parameters/lang'
+        - $ref: '#/components/parameters/rentalId'
+        - $ref: '#/components/parameters/locationId'
+        - name: latitude
+          in: query
+          required: true
+          schema:
+            type: number
+          example: 50.45
+        - name: longitude
+          in: query
+          required: true
+          schema:
+            type: number
+          example: 10.154
+        - name: confirmationCode
+          in: query
+          description: leave always empty
+          required: true
+          deprecated: true
+          schema:
+            nullable: true
+            type: string
+            default: null
+      responses:
+        '204':
+          description: 'Return finished, response contains finished rental data'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TKRental'
+        '404':
+          description: 'Unknown path, fix parameters name'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TKNotFoundException'
+  /Rental/Pause:
+    post:
+      tags:
+        - Rentals
+      summary: Pause rental
+      description: 'Start rental pause for the authenticated user. Rental must be active and previously created by the same user. Rental rules must allow rental breaks. Bike is blocked/unblocked if out/in allowed area specified in longitude, latitude. Rental pause is allowed only for not blocked bikes. Unpause using standard rental request.'
+      parameters:
+        - $ref: '#/components/parameters/lang'
+        - $ref: '#/components/parameters/rentalId'
+        - name: latitude
+          in: query
+          required: true
+          schema:
+            type: integer
+          example: 50.14
+        - name: longitude
+          in: query
+          required: true
+          schema:
+            type: integer
+          example: 0.14
+      responses:
+        '200':
+          description: 'Empty response'
+        '400':
+          description: 'Invalid request'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TKServiceException'
+        '404':
+          description: 'Unknown path, fix parameters name'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TKNotFoundException'
+  /Reservation/Create:
+    post:
+      tags:
+        - Rentals
+      summary: Rent bike from lock
+      description: Create Reservation for bike in hardware lock in station. `bikeId` or `spikeId` has to be not null
+      parameters:
+        - $ref: '#/components/parameters/lang'
+        - $ref: '#/components/parameters/bikeId'
+        - $ref: '#/components/parameters/spikeId'
+      responses:
+        '200':
+          description: 'Info about Reservation'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TKReservation'
+        '404':
+          description: 'Unknown path, fix parameters name'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TKNotFoundException'
+  /Reservation:
+    get:
+      tags:
+        - Rentals
+      summary: Get Reservation status
+      description: Reservation detail by `resrvationId`
+      parameters:
+        - $ref: '#/components/parameters/lang'
+        - $ref: '#/components/parameters/reservationId'
+      responses:
+        '200':
+          description: 'Info about Reservation'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TKReservation'
+        '400':
+          description: 'Invalid request'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TKNotFoundException'
+        '404':
+          description: 'Unknown path, fix parameters name'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TKNotFoundException'
+  /Reservation/Cancel:
+    post:
+      tags:
+        - Rentals
+      summary: 'Cancel reservation'
+      description: Customer can cancel his request is `Timeout` is not exceeded
+      parameters:
+        - $ref: '#/components/parameters/lang'
+        - $ref: '#/components/parameters/reservationId'
+      responses:
+        '200':
+          description: 'Empty response'
+        '400':
+          description: 'Invalid request'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TKServiceException'
+        '404':
+          description: 'Unknown path, fix parameters name'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TKNotFoundException'
+  /Rental/Rating:
+    put:
+      tags:
+        - Rentals
+      summary: Rental rating
+      description: Create rating of the rental for the authenticated user.
+      parameters:
+        - $ref: '#/components/parameters/lang'
+        - $ref: '#/components/parameters/rentalId'
+        - name: rating
+          in: query
+          schema:
+            type: integer
+          description: range 0 - 10
+          required: true
+        - name: note
+          in: query
+          schema:
+            type: string
+            nullable: true
+          required: true
+      responses:
+        200:
+          description: empty response, status 200
+  /Rental/RequestReturnConfirmationCode:
+    put:
+      tags:
+        - Rentals
+      summary: Request return confirmation code
+      deprecated: true
+      description: Designed for returing bike with confirmation codes to selected locations, not working now, needs additional work in Backend to finish this feature
+      parameters:
+        - $ref: '#/components/parameters/lang'
+        - $ref: '#/components/parameters/locationId'
+        - $ref: '#/components/parameters/rentalId'
+      responses:
+        200:
+          description: OK
+components:
+  parameters:
+    Task_escalate:
+      name: escalate
+      in: query
+      required: true
+      schema:
+        type: boolean
+    Task_note:
+      name: note
+      in: query
+      required: true
+      schema:
+        nullable: true
+        type: string
+    Task_additionalinfo:
+      name: additionalinfo
+      in: query
+      required: true
+      schema:
+        nullable: true
+        type: string
+    Task_equipmentId:
+      name: equipmentId
+      in: query
+      required: true
+      schema:
+        type: integer
+    Task_priorityId:
+      name: priorityId
+      in: query
+      required: true
+      schema:
+        type: integer
+    Task_assignedtoId:
+      name: assignedtoId
+      in: query
+      required: true
+      schema:
+        type: integer
+    tasktypeId:
+      name: tasktypeId
+      in: query
+      required: true
+      schema:
+        type: integer
+    stateId:
+      name: stateId
+      in: query
+      required: true
+      schema:
+        type: integer
+    rentalId:
+      name: rentalId
+      in: query
+      schema:
+        type: integer
+      required: true
+    rentalIdPath:
+      name: rentalId
+      in: path
+      schema:
+        type: integer
+      required: true
+    spikeId:
+      name: spikeId
+      in: query
+      description: 'Spike id of the bike to rent. Either this o bikeId has to be specified.'
+      required: true
+      schema:
+        type: string
+      example: 'FEE57'
+    reservationId:
+      name: reservationId
+      in: query
+      required: true
+      schema:
+        type: integer
+      example: 342
+    bikeId:
+      name: bikeId
+      in: query
+      description: 'Spike id of the bike to rent. Either this o bikeId has to be specified.'
+      required: true
+      schema:
+        type: integer
+      example: '98'
+    locationId:
+      name: locationId
+      in: query
+      required: true
+      schema:
+        type: integer
+    TaskTaskID:
+      name: taskID
+      in: query
+      required: true
+      schema:
+        type: integer
+    SparePartDescription:
+      name: Description
+      in: query
+      required: true
+      schema:
+        type: string
+    Task_equipmentTypeID:
+      name: equipmentTypeID
+      in: query
+      schema:
+        type: integer
+    SparePart_EquipmentTypeId:
+      name: equipmenttypeId
+      in: query
+      required: true
+      schema:
+        type: integer
+    pageNumber:
+      name: pageNumber
+      in: query
+      required: true
+      schema:
+        type: number
+        default: 1
+    lang:
+      name: lang
+      in: query
+      description: 'lang for localised response'
+      schema:
+        type: string
+        default: en
+        example: en
+    SparePartExternalId:
+      name: externalID
+      in: query
+      schema:
+        nullable: true
+        type: string
+      description: External ID note
+      example: null
+      required: true
+    repairID:
+      name: repairID
+      required: true
+      in: query
+      schema:
+        type: integer
+    repairIDPath:
+      name: repairID
+      required: true
+      in: path
+      schema:
+        type: integer
+    SparePartIDPath:
+      name: sparePartID
+      in: path
+      required: true
+      schema:
+        type: integer
+    SparePartID:
+      name: sparePartID
+      in: query
+      schema:
+        nullable: true
+        type: string
+      description: External ID note
+      example: null
+      required: true
+  schemas:
+    PageNumber:
+      title: 'Current page number'
+      type: integer
+      example: 2
+    TKEBikeMotorProfile:
+      title: 'EBike Motor Profile data'
+      properties:
+        Code:
+          title: 'ID of motor profile, lowest is slowest'
+          type: integer
+          example: 1
+        Name:
+          title: 'Name or profile'
+          type: string
+          example: 'Insane mode'
+      type: object
+    TKEBikeProfile:
+      title: 'EBike Profile data'
+      properties:
+        EbikeProfileID:
+          title: 'ID of profile'
+          type: integer
+          format: int32
+          example: 1
+        EbikeProfileName:
+          title: 'Name or profile'
+          description: 'Using only in backend admin interface'
+          type: string
+          format: string
+          example: Default
+        AreaID:
+          title: 'Geofence Area ID'
+          description: 'ID of /Area which is set as Geofence area, motor will be blocked after leave defined area'
+          type: integer
+          format: int32
+          example: 3
+        BlockOnGPSSilence:
+          title: 'Block motor if GPS is missing'
+          description: 'Info for bike, not useful for users apps'
+          type: boolean
+          format: boolean
+          example: false
+        GpsSilenceThresholdMinutes:
+          title: 'Block motor threshold'
+          description: 'How long has to be GPS without valid data to apply BlockOnGPSSilence'
+          type: integer
+          format: int32
+          example: 'Hello world!'
+          nullable: true
+        UseMinBatteryLevelPercentage:
+          title: 'Switch off motor reaching this battery level'
+          description: 'Rental will be switched to Freebike type'
+          type: boolean
+          format: boolean
+          example: true
+        MinBatteryLevelPercentage:
+          title: 'Minimum battery level'
+          description: 'Motor will be switched off reaching this level'
+          type: integer
+          format: int32
+          example: 20
+          nullable: true
+        CpuVersion:
+          title: 'CPU version'
+          type: string
+          format: string
+          example: cp1454
+        GPSMessageInterval:
+          title: 'Interval for sending GPS messages'
+          type: integer
+          format: int32
+          example: 10
+          nullable: true
+        ServiceMessageInterval:
+          title: 'Interval for sending Service messages'
+          type: integer
+          format: int32
+          example: 15
+          nullable: true
+        BlockTime:
+          title: 'Block motor if bike has no message server'
+          description: 'In minutes'
+          type: integer
+          format: int32
+          example: 45
+          nullable: true
+        ServerTimeout:
+          title: 'Server timeout'
+          type: integer
+          format: int32
+          example: 60
+          nullable: true
+        RetryCount:
+          title: 'Number of connection attempts'
+          type: integer
+          format: int32
+          example: 2
+          nullable: true
+      type: object
+    TKErrorDescriptionException:
+      title: 'General error'
+      description: 'Description of error'
+      properties:
+        error:
+          title: 'Reason of error'
+          type: string
+          format: string
+          example: invalid_clientId
+        error_description:
+          title: 'Incorrect data'
+          type: string
+          format: string
+          example: 'Client ''iphfone'' is not registered in the system.'
+      type: object
+    TKErrorException:
+      title: 'General error'
+      description: 'Description of error'
+      properties:
+        error:
+          title: 'Reason of error'
+          type: string
+          format: string
+          example: 'The user name or password is incorrect.'
+      type: object
+    TKNotFoundException:
+      title: 'Path not found'
+      description: 'Path or params has to be fixed, all params has to be sent, even empty'
+      properties:
+        Message:
+          title: 'Info about problem'
+          type: string
+          format: string
+          example: 'No HTTP resource was found that matches the request URI ...'
+      type: object
+    TKServiceException:
+      title: 'Service exception'
+      description: 'Could not complete request, details below'
+      properties:
+        Message:
+          title: 'Localised error reason'
+          type: string
+          format: string
+          example: 'Stránka s daným číslem neexistuje.'
+        MessageDetail:
+          title: 'Reason status code'
+          type: string
+          format: string
+          example: INVALID_PAGE_NUMBER
+        ExceptionType:
+          title: 'Exception type'
+          type: string
+          format: string
+          example: TKServiceException
+      type: object
+    TKSetting_RENTAL_ALLOW_EXTERNAL_RENTAL:
+      title: 'Settings - allow external rental'
+      properties:
+        Key:
+          title: 'Is allowed to rent bike locked out of Hardware Lock'
+          type: string
+          format: string
+          example: RENTAL_ALLOW_EXTERNAL_RENTAL
+        Value:
+          title: 'Setting Value'
+          type: string
+          format: string
+          enum:
+            - '0'
+            - '1'
+          example: '1'
+      type: object
+    TKSetting_RENTAL_ALLOW_EXTERNAL_RETURN:
+      title: 'Settings - Allow external return'
+      properties:
+        Key:
+          title: 'Is allowed to return bike locked out of Hardware Lock'
+          type: string
+          format: string
+          example: RENTAL_ALLOW_EXTERNAL_RETURN
+        Value:
+          title: 'Setting Value'
+          type: string
+          format: string
+          enum:
+            - '0'
+            - '1'
+          example: '1'
+      type: object
+    TKSetting_RENTAL_EXTERNAL_MAX_LOCATION_DISTANCE:
+      title: 'Settings - Distance for return to location'
+      properties:
+        Key:
+          title: 'Maximum distance for bike from Location when bike is allowed to return to Location'
+          description: 'Bike returned to coords in radius of Location will be assigned to Location automatically. Use ReturnBike request with locationId parameter if is user in radius.'
+          type: string
+          format: string
+          example: RENTAL_EXTERNAL_MAX_LOCATION_DISTANCE
+        Value:
+          title: 'Location radius'
+          type: string
+          format: string
+          example: '50'
+      type: object
+    TKSetting_RENTAL_ALLOW_EXTERNAL_RENTAL_ANYWHERE:
+      title: 'Settings - Allow rent bike from coords'
+      properties:
+        Key:
+          title: 'Is allowed to rent bike locked on coords out of location'
+          description: ''
+          type: string
+          format: string
+          example: RENTAL_ALLOW_EXTERNAL_RENTAL_ANYWHERE
+        Value:
+          title: 'Setting value'
+          type: string
+          format: string
+          enum:
+            - '0'
+            - '1'
+          example: '1'
+      type: object
+    TKSetting_RENTAL_ALLOW_EXTERNAL_RETURN_ANYWHERE:
+      title: 'Settings - Allow return bike to coords'
+      properties:
+        Key:
+          title: 'Is allowed to return bike locked on coords out of location'
+          description: ''
+          type: string
+          format: string
+          example: RENTAL_ALLOW_EXTERNAL_RETURN_ANYWHERE
+        Value:
+          title: 'Setting value'
+          type: string
+          format: string
+          enum:
+            - '0'
+            - '1'
+          example: '1'
+      type: object
+    TKSetting_RENTAL_EXTERNAL_CONFIRMATION_REQUIRE:
+      title: 'Settings - Confirmation by SMS code'
+      properties:
+        Key:
+          title: 'Is required confirmation code by receptionist'
+          description: 'Is not in use nowadays'
+          type: string
+          format: string
+          example: RENTAL_EXTERNAL_CONFIRMATION_REQUIRE
+        Value:
+          title: 'Setting value'
+          type: string
+          format: string
+          enum:
+            - '0'
+            - '1'
+          example: '1'
+      type: object
+    TKSetting_RENTAL_EXTERNAL_MAX_BIKE_DISTANCE_METRES:
+      title: 'Settings - Maximum distance from bike to rent'
+      properties:
+        Key:
+          title: 'Maximum distance user from bike to allow rent/return'
+          description: 'Bike can not be rented if his distance from bike is higher. For return bike us this value multiply 2.'
+          type: string
+          format: string
+          example: RENTAL_EXTERNAL_MAX_BIKE_DISTANCE_METRES
+        Value:
+          title: 'Location radius'
+          type: string
+          format: string
+          example: '50'
+      type: object
+    TKSetting_RESERVATION_PREAUTH_TIMEOUT:
+      title: 'Settings - Maximum delay for finish Reservation'
+      properties:
+        Key:
+          title: 'Time for press button on hardware lock to release bike'
+          description: 'Used if is made Rental/Reservation to rent bike using app from hardware lock. Invoke user action to press hardware lock to wake up station hardware lock to release bike.'
+          type: string
+          format: string
+          example: RESERVATION_PREAUTH_TIMEOUT
+        Value:
+          title: 'Maximum time for Reservation validity'
+          type: string
+          format: string
+          example: '60'
+      type: object
+    TKSetting_RESERVATION_PREAUTH_DISTANCE:
+      title: 'Settings - Maximum distance for Reservation'
+      properties:
+        Key:
+          title: Distance
+          description: 'Used if is made Rental/Reservation to rent bike using app from hardware lock. Check customer distance from location for allow make a new Rental/Reservation.'
+          type: string
+          format: string
+          example: RESERVATION_PREAUTH_DISTANCE
+        Value:
+          title: 'Maximum distace in meters from location to allow make a reservation'
+          type: string
+          format: string
+          example: '50'
+      type: object
+    TKSetting_GBFS_FREEBIKE_BATTERY_RANGE_CORRECTION:
+      title: 'Ebike range correction'
+      properties:
+        Key:
+          title: 'Battery correction to km'
+          description: 'Recalculate to range in km. Recalculate to range in kilometers with this formula: (Y-X)*(100/(100-X)) where X is GBFS_FREEBIKE_BATTERY_RANGE_CORRECTION and Y is current real battery level. Expected result for GBFS_FREEBIKE_BATTERY_RANGE_CORRECTION = 20 and battery level 80 is 75 km'
+          type: string
+          format: string
+          example: GBFS_FREEBIKE_BATTERY_RANGE_CORRECTION
+        Value:
+          title: 'Range correction'
+          type: number
+          example: 10
+      type: object
+    TKSetting_GBFS_MAX_RANGE_METERS:
+      title: 'Ebikes maximal range'
+      properties:
+        Key:
+          title: 'In meters'
+          description: 'Maximum ebike range'
+          type: string
+          format: string
+          example: GBFS_MAX_RANGE_METERS
+        Value:
+          title: 'Range in meters'
+          type: number
+          example: 100000
+      type: object
+    TKSetting_GBFS_IOS_DISCOVERY_URI:
+      title: 'iOS Discovery URI'
+      properties:
+        Key:
+          title: 'Discovery URI'
+          description: 'Discovery URI'
+          type: string
+          format: string
+          default: GBFS_IOS_DISCOVERY_URI
+        Value:
+          title: 'URL'
+          type: string
+          example: 'com.freebike.app://'
+      type: object
+    TKSetting_GBFS_ANDROID_DISCOVERY_URI:
+      title: 'Android Discovery URI'
+      properties:
+        Key:
+          title: 'Discovery URI'
+          description: 'Discovery URI'
+          type: string
+          format: string
+          default: GBFS_ANDROID_DISCOVERY_URI
+        Value:
+          title: 'URL'
+          type: string
+          example: 'com.freebike.app://'
+      type: object
+    TKSetting_GBFS_ANDROID_STORE_URI:
+      title: 'App store url for Google'
+      properties:
+        Key:
+          title: 'GBFS_ANDROID_DISCOVERY_URI'
+          description: 'url in Google Play'
+          type: string
+          default: GBFS_ANDROID_STORE_URI
+        Value:
+          title: 'URL'
+          type: string
+          example: 'https://play.google.com/store/apps/details?id=com.freebike.app'
+      type: object
+    TKSetting_GBFS_IOS_STORE_URI:
+      title: 'App store url for iOS'
+      properties:
+        Key:
+          title: 'GBFS_IOS_STORE_URI'
+          description: 'url in AppStore'
+          type: string
+          format: string
+          example: GBFS_IOS_STORE_URI
+        Value:
+          title: 'URL'
+          type: string
+          example: 'https://apps.apple.com/us/app/freebike-2-0/id1536716741'
+      type: object
+    TKSetting_GBFS_EMAIL:
+      title: 'Contact email'
+      properties:
+        Key:
+          title: 'Contact email'
+          description: 'Contact email for gbfs file and similar purposes'
+          type: string
+          format: string
+          example: GBFS_EMAIL
+        Value:
+          title: '@'
+          type: string
+          format: email
+          example: 'info@freebike.com'
+      type: object
+    TKSetting_GBFS_TELEPHONE:
+      title: 'Contact phone'
+      properties:
+        Key:
+          title: 'Contact phone'
+          description: 'Contact phone for gbfs file and similar purposes'
+          type: string
+          format: string
+          example: GBFS_TELEPHONE
+        Value:
+          title: '@'
+          type: string
+          format: phone
+          example: '1-800-555-1234'
+      type: object
+    TKSetting_GBFS_URL:
+      title: 'GBFS url'
+      properties:
+        Key:
+          title: 'GBFS url'
+          description: 'Root URL for GBFS root file, append /gbfs.json to url to get root gbfs file'
+          type: string
+          example: GBFS_URL
+        Value:
+          title: 'gbfs root file'
+          type: string
+          format: phone
+          example: 'https://tkhslahtistorage.blob.core.windows.net/gbfs/gbfs.json'
+      type: object
+    TKSetting_ACTIVE_FREEBIKE_COUNT:
+      title: 'Bikes in system'
+      properties:
+        Key:
+          title: 'Bikes in system'
+          description: 'Active bikes in system'
+          type: string
+          default: ACTIVE_FREEBIKE_COUNT
+        Value:
+          title: 'Bike count'
+          type: number
+          example: 20
+      type: object
+    TKSetting_EBIKE_PRICE_PER_DAY:
+      title: 'Price'
+      properties:
+        Key:
+          title: 'Price'
+          description: 'Price'
+          type: string
+          default: EBIKE_PRICE_PER_DAY
+        Value:
+          title: 'Bike price'
+          type: number
+          example: 1
+      type: object
+    TKSetting_ACTIVE_SEASON_START:
+      title: 'Season start'
+      properties:
+        Key:
+          title: 'Season start'
+          description: 'Season start'
+          type: string
+          default: ACTIVE_SEASON_START
+        Value:
+          title: 'Date of season start'
+          type: string
+          format: date
+          example: 29/06/2020
+      type: object
+    TKSetting_ACTIVE_SEASON_END:
+      title: 'Season end'
+      properties:
+        Key:
+          title: 'Season end'
+          description: 'Season end'
+          type: string
+          default: ACTIVE_SEASON_END
+        Value:
+          title: 'Date of season end'
+          type: string
+          format: date
+          example: 29/09/2020
+      type: object
+    Timezone:
+      title: Timezone
+      properties:
+        TimeZoneId:
+          title: 'Timezone identificator'
+          type: string
+          format: string
+          example: Europe/London
+        Offset:
+          title: 'Offset from UTC in seconds'
+          type: integer
+          format: int32
+          example: '3600'
+        TimeZoneWindowsId:
+          title: 'Timezone identificator'
+          type: string
+          format: string
+          example: 'GMT Standard Time'
+      type: object
+    TKAccountActivities:
+      title: 'List of account activities'
+      properties:
+        PageNumber:
+          title: 'Page number'
+          type: integer
+          format: int32
+          example: 1
+        PageTotal:
+          title: 'Page total'
+          type: integer
+          format: int32
+          example: 8
+        TotalCredit:
+          title: 'Total credit for customer'
+          type: number
+          format: float
+          example: 150.5
+        TotalBonus:
+          title: 'Total bonus for customer'
+          type: number
+          format: float
+          example: 45.45
+        TotalDeposit:
+          title: 'Total deposit for customer'
+          type: number
+          format: float
+          example: 45.45
+        Activities:
+          title: 'List of customer''s account activities'
+          type: array
+          format: array
+          items:
+            $ref: '#/components/schemas/TKAccountActivity'
+      type: object
+    TKAccountActivity:
+      title: 'Customer card'
+      properties:
+        AccountActivityID:
+          title: 'Internal AccountActivity ID'
+          type: integer
+          format: int32
+          example: 11516814
+        RecordTime:
+          title: 'Record time'
+          type: string
+          format: string
+          example: '2020-05-29T00:06:53.027'
+        ActivityType:
+          title: 'Activity type'
+          description: 'Human friendly ActivityTypeExternalID'
+          type: string
+          format: string
+          example: 'Charge money'
+        Amount:
+          title: 'Activity amount'
+          description: 'Negative if balance is decreased, positive if balance increased'
+          type: number
+          format: float
+          example: 54.3
+        Balance:
+          title: 'Account balance'
+          type: number
+          format: float
+          example: 544.4
+        ExternalID:
+          title: 'External id of activity'
+          type: string
+          format: string
+          example: null
+          nullable: true
+        CustomerID:
+          title: 'Customer ID Activity belongs to'
+          type: integer
+          format: int32
+          example: 1132
+        ActivityTypeExternalID:
+          title: 'Code of account activity'
+          description: 'Might be variable in every system'
+          type: string
+          format: string
+          example: EXT_WS_CREDIT_CARD
+        Currency:
+          title: Currency
+          type: string
+          format: string
+          example: null
+          nullable: true
+        Note:
+          title: 'Activity note'
+          type: string
+          format: string
+          example: null
+          nullable: true
+        EPaymentOrderID:
+          title: 'Payment order ID'
+          type: string
+          format: string
+          example: null
+          nullable: true
+        BonusBalance:
+          title: 'Bonus balance'
+          type: number
+          format: float
+          example: 0
+        BonusAmount:
+          title: 'Bonus amount'
+          type: number
+          format: float
+          example: 0
+        DepositBalance:
+          title: 'Deposit balance'
+          type: number
+          format: float
+          example: 0
+        DepositAmount:
+          title: 'Deposit amount'
+          type: number
+          format: float
+          example: 0
+        VoucherCode:
+          title: 'Voucher code'
+          description: 'Applied voucher code'
+          type: string
+          format: string
+          example: null
+          nullable: true
+        OriginExternalClient:
+          title: 'Origin external ID'
+          type: string
+          format: string
+          example: null
+          nullable: true
+        PaymentRequestID:
+          title: 'Payment request ID'
+          type: string
+          format: string
+          example: null
+          nullable: true
+      type: object
+    TKCard:
+      title: 'Customer card'
+      properties:
+        CardNumberPrinted:
+          title: 'Card Number'
+          type: string
+          format: string
+          example: '00818'
+        Pin:
+          title: 'Card PIN'
+          type: string
+          format: string
+          example: '0084'
+        RfidCardNumber:
+          title: 'RFID unique code'
+          type: string
+          format: string
+          example: fdsgsdg5616
+          nullable: true
+      type: object
+    TKContracts:
+      title: 'List of contracts'
+      properties:
+        PageNumber:
+          title: 'Current page number'
+          type: integer
+          format: int32
+          example: 2
+        PageTotal:
+          title: 'Total pages'
+          type: integer
+          format: int32
+          example: 4
+        Contracts:
+          title: 'Contracts list'
+          type: array
+          format: array
+          items:
+            $ref: '#/components/schemas/TKContract'
+      type: object
+    TKContract:
+      title: 'Customer contract'
+      properties:
+        ContractID:
+          title: 'Contract ID'
+          description: 'internal ID of relation customer=>contracts'
+          type: string
+          format: int32
+          example: 12264
+        ValidFrom:
+          title: 'Contract valid from'
+          type: string
+          format: string
+          example: '2020-05-11T11:09:57'
+        ValidUntil:
+          title: 'Contract valid until'
+          description: 'Might be null -> contract is still active till cancellation'
+          type: string
+          format: string
+          example: '2020-06-11T11:09:57'
+          nullable: true
+        BusinessRuleExtID:
+          title: 'Unique identifier of Business rules'
+          type: string
+          format: string
+          example: fb-1-year
+        BusinessRuleName:
+          title: 'Business rule name'
+          type: string
+          format: string
+          example: 'Freebike 1 year'
+        FK_BusinessRules:
+          title: 'ID of Business rules'
+          type: integer
+          format: int32
+          example: 74
+        Status:
+          title: 'Contract status human friendly'
+          type: string
+          format: string
+          example: Active
+        AutoRenew:
+          title: 'Contract will be autorenewed'
+          description: 'Almost deprecated, all tariffs are set as non autorenewed'
+          type: string
+          format: boolean
+          example: false
+        StatusCode:
+          title: 'Status Code'
+          description: 'Prepared,Active,Closed,Cancelled'
+          type: integer
+          format: int32
+          enum:
+            - 1
+            - 2
+            - 3
+            - 4
+          example: 1
+        AllowedReservations:
+          title: 'Allow Reservations'
+          description: 'Rental/Reservation for renting from station hardware lock might be used'
+          type: string
+          format: boolean
+          example: true
+        VoucherCode:
+          title: 'Applied voucher'
+          type: string
+          format: string
+          example: 151EE
+          nullable: true
+      type: object
+    TKCustomer:
+      title: 'Customer data'
+      properties:
+        Addresses:
+          title: 'Customer address'
+          format: object
+          example: null
+          nullable: true
+        Admin:
+          title: 'Customer is also System administrator (serviceman)'
+          type: boolean
+          format: boolean
+          example: false
+        Age:
+          title: 'Customer age'
+          type: integer
+          format: int32
+          example: null
+          nullable: true
+          deprecated: true
+        Balance:
+          title: 'Balance credit'
+          type: number
+          format: float
+          example: 2.54
+        Birthday:
+          title: Birthday
+          type: string
+          format: string
+          example: null
+          nullable: true
+        TitleBefore:
+          title: 'Title before'
+          type: string
+          format: string
+          example: null
+          nullable: true
+          deprecated: true
+        TitleAfter:
+          title: 'Title after'
+          type: string
+          format: string
+          nullable: true
+          deprecated: true
+        BonusBalance:
+          title: 'Balance credit'
+          type: number
+          format: float
+          example: 2.54
+        CardNumber:
+          title: 'Card Number'
+          type: string
+          format: string
+          example: '01546'
+          nullable: true
+        CardPin:
+          title: 'Card PIN'
+          type: string
+          format: string
+          example: '00454'
+          nullable: true
+        Contract:
+          title: 'Active Contract name'
+          description: 'Returns always null, use endpoint /User/Contract to get contracts for current customer'
+          type: string
+          format: string
+          example: null
+          nullable: true
+        CreatedTime:
+          title: 'Date of account created'
+          type: string
+          format: string
+          example: '2014-08-06T22:51:35.077'
+        CustomerID:
+          title: 'Customer ID in system'
+          type: integer
+          format: int32
+          example: 1123
+        DepositBalance:
+          title: 'Deposit credit'
+          type: number
+          format: float
+          example: 2.54
+        EBikeMotorProfileCode:
+          title: 'EBike motor profile code'
+          description: 'Current motor profile code, 1 is slowest, increasing principle to highest power'
+          type: integer
+          format: int32
+          example: 3
+          nullable: true
+        EBikeMotorProfileName:
+          title: 'EBike motor profile name'
+          description: 'User friendly ebike profile name'
+          type: string
+          format: string
+          example: Batmobil
+          nullable: true
+        EmailAddress:
+          title: 'Email Address'
+          type: string
+          format: email
+          example: joe.doe@me.com
+        UserGroupName:
+          title: 'Customer group name'
+          description: 'Customer might be member of backend group'
+          type: string
+          format: string
+          example: null
+          nullable: true
+        UserGroupExternalID:
+          title: 'Customer''s group extrnal id'
+          type: string
+          format: string
+          example: null
+          nullable: true
+        ExternalID:
+          title: 'Customer external id'
+          type: string
+          format: string
+          example: null
+          nullable: true
+        GenderExternalID:
+          title: 'Gender external id'
+          type: integer
+          format: int32
+          example: 1
+          nullable: true
+        GenderName:
+          title: 'Gender name'
+          type: string
+          format: string
+          example: Male
+          nullable: true
+        Language:
+          title: 'Customer''s lang'
+          type: string
+          format: string
+          example: cs
+        MarketingConsent:
+          title: 'Customer gave marketing consent'
+          type: boolean
+          format: boolean
+          example: true
+        MiddleName:
+          title: 'Middle name'
+          type: string
+          format: string
+          nullable: true
+          deprecated: true
+        Name:
+          title: 'First name'
+          type: string
+          format: string
+          example: Joe
+          nullable: true
+        PDPAConsent:
+          title: 'Customer gave PDPA consent'
+          type: boolean
+          format: boolean
+          example: true
+        PhoneNumber:
+          title: 'Phone Number'
+          type: string
+          format: phone
+          example: '+420777555444'
+          nullable: true
+        ReferenceUser:
+          title: 'Reference Customer ID'
+          type: integer
+          format: string
+          example: null
+          nullable: true
+        RentalTypeCode:
+          title: 'Default bike rent when using RFID card'
+          description: 'Freebike, Ebike'
+          type: integer
+          format: int32
+          enum:
+            - 0
+            - 1
+          example: 1
+        Status:
+          title: 'Status description'
+          type: string
+          format: string
+          example: Active
+        StatusCode:
+          title: 'Status code of customer'
+          description: "\n     * 2: Inactive (blocked)\n     * 1: Active"
+          type: integer
+          format: int32
+          enum:
+            - 1
+            - 2
+          example: 1
+        Surname:
+          title: 'Last name'
+          type: string
+          format: string
+          example: Doe
+        PushToken:
+          title: 'Push notification token'
+          description: 'Override to set new push notification token'
+          type: string
+          format: string
+          example: PushTokenGeneratedFromNativeSDK
+        Timestamp:
+          title: 'Internal timestamp of last change'
+          type: string
+          format: string
+          example: AAAAAACUNks=
+      type: object
+    TKInfos:
+      title: 'Info list'
+      properties:
+        PageNumber:
+          title: 'Current page number'
+          type: integer
+          format: int32
+          example: 2
+        PageTotal:
+          title: 'Total pages'
+          type: integer
+          format: int32
+          example: 4
+        News:
+          title: 'List new News items'
+          type: array
+          format: array
+          items:
+            $ref: '#/components/schemas/TKNews'
+      type: object
+    TKNews:
+      title: 'News item'
+      description: 'Schema currently missing news id, will be added in backend and doc will be updated'
+      properties:
+        Title:
+          title: 'Title of news'
+          type: string
+          format: string
+          example: 'Hello world!'
+        Content:
+          title: 'Content of news'
+          description: 'Might contain HTML tags'
+          type: string
+          format: string
+          example: 'Hi, bikes are released for public use!'
+        Published:
+          title: 'Published at, might be null if not defined'
+          type: string
+          format: string
+          example: '2020-06-15T00:00:00'
+          nullable: true
+      type: object
+    TKArea:
+      title: TKArea
+      properties:
+        AreaID:
+          title: 'ID of area'
+          type: integer
+          format: int32
+          example: 44
+        BikeReturnsAllowed:
+          title: 'Is allowed to return bike'
+          type: boolean
+          format: boolean
+          example: true
+        Fee:
+          title: 'Additional fee'
+          type: number
+          format: float
+          default: 0
+          example: 15.5
+        FeeTypeCode:
+          title: 'ID of Fee type'
+          type: integer
+          format: int32
+          example: 1
+        FeeTypeDescription:
+          title: 'Localised Fee description'
+          type: string
+          format: string
+          example: Kredit
+        KmlFilename:
+          title: 'Original name of kml file stored on server'
+          type: string
+          format: string
+          example: 'my area.kml'
+        Name:
+          title: 'Name of area'
+          type: string
+          format: string
+          example: 'Hyde Park'
+        Note:
+          title: 'Area note'
+          description: 'Additional area description'
+          type: string
+          format: string
+          example: Europe/London
+          nullable: true
+        Points:
+          title: 'Array of points'
+          description: 'Create polygon using Latitude, Longitude and Order'
+          type: array
+          format: array
+          items:
+            $ref: '#/components/schemas/TKAreaPoint'
+        Priority:
+          title: 'Timezone identificator'
+          type: string
+          format: string
+          example: Europe/London
+      type: object
+    TKAreaPoint:
+      title: TKAreaPoint
+      properties:
+        Latitude:
+          title: 'Point latitude'
+          type: number
+          format: float
+          example: 50.0157
+        Longitude:
+          title: 'Point longitude'
+          type: number
+          format: float
+          example: 0.8187
+        Order:
+          title: 'Point order'
+          type: integer
+          format: int32
+          example: 45
+      type: object
+    TKMapData:
+      title: 'Map data'
+      properties:
+        DefaultLongitude:
+          title: 'System Longitude'
+          type: number
+          format: float
+          example: 14.25
+        DefaultLatitude:
+          title: 'System Latitude'
+          type: number
+          format: float
+          example: 50.25
+        DefaultZoomLevel:
+          title: 'Default map zoom level'
+          type: integer
+          format: int32
+          example: 10
+        MainWarehouseLocationId:
+          title: ID of warehouse location
+          description: for Service app
+          type: integer
+          example: 20
+        Locations:
+          title: 'List of locations in system'
+          type: array
+          format: array
+          items:
+            $ref: '#/components/schemas/TKLocation'
+      type: object
+    TKLocation:
+      title: 'Location detail'
+      properties:
+        LocationID:
+          title: 'Unique Location ID'
+          type: integer
+          format: int32
+          example: 10
+        Name:
+          title: 'Name of location for customers'
+          type: string
+          format: text
+          example: 'Trafalgar Square'
+        Longitude:
+          title: 'Location Longitude'
+          type: number
+          format: float
+          example: 15.54
+        Latitude:
+          title: 'Location Latitude'
+          type: number
+          format: float
+          example: 12.45
+        AllowExternalRent:
+          title: 'Allowed external rent bike'
+          description: 'Is allowed to rent bike standing near the Location, generally locked itself (cable lock, blocked by motor)'
+          type: boolean
+          format: boolean
+          example: true
+        AllowExternalReturn:
+          title: 'Allowed external return bike'
+          description: 'Is allowed to return bike near the station, it is not necesasary to use hardware locks'
+          type: boolean
+          format: boolean
+          example: true
+        VirtualLockCount:
+          title: 'Capacity for external returns'
+          description: 'Location might restrict capacity for external returns, null if not restricted'
+          type: integer
+          format: int32
+          example: 10
+        IsServiceLocation:
+          title: 'Location is only for service users'
+          description: 'Location is visible only for user request with bearer with service user'
+          type: boolean
+          example: false
+        IsVirtual:
+          title: 'Station is virtual'
+          description: 'This Location has no locks and renting terminal, might be marked with sign or spray'
+          type: boolean
+          format: int32
+          example: 10
+        Stations:
+          title: 'Stations in Location'
+          type: array
+          format: array
+          items:
+            $ref: '#/components/schemas/TKStation'
+        AvailableExternalBikes:
+          title: 'Bikes locked externally'
+          description: 'List of bikes in Location available'
+          type: array
+          format: array
+          items:
+            $ref: '#/components/schemas/TKBike'
+      type: object
+    TKBikeCore:
+      title: Core Bike detail data
+      properties:
+        BikeID:
+          title: 'Unique bike ID'
+          description: 'Use for rent bike'
+          type: integer
+          format: int32
+          example: 10
+        SpikeID:
+          title: 'Spike ID'
+          description: 'Might be used for rent bike instead of BikeID'
+          type: string
+          format: text
+          example: '110'
+          nullable: true
+        LockNumber:
+          title: 'Bike is locked in station lock'
+          description: 'Rent with app has to be done with /Reservation request'
+          type: integer
+          format: int32
+          example: null
+          nullable: true
+        IsEBike:
+          title: 'Is electronic bike'
+          description: 'Bike sends messages to Backend (bike is equipped with electronic, bluetooth etc.)'
+          type: boolean
+          format: boolean
+          example: true
+        IsSmartLock:
+          title: 'Bike has smart lock'
+          description: 'App must not send Return request, bike is returned by smart lock. Unless taking photo of locked bike is necessary, in this case Return request has to be sent after photo is taken. Read more about photos in frontend doc.'
+          type: boolean
+          format: boolean
+          example: true
+        IsMotor:
+          title: 'Has engine'
+          description: 'Electric engine might be used for ride'
+          type: boolean
+          format: boolean
+          example: false
+        LockInput:
+          title: 'Lock status'
+          type: integer
+          format: int32
+          example: null
+          nullable: true
+        EBikeStateID:
+          title: 'EBike State'
+          description: 'Indicates: {1:''Warning - is in move and not rented'',2:''Normal'',3:''Switched Off'',4:''Firmware Upgrade'',5:''Laying on the ground''}'
+          type: integer
+          format: int32
+          enum:
+            - 1
+            - 2
+            - 3
+            - 4
+            - 5
+          example: 2
+        BikeTypeName:
+          title: 'Bike type name'
+          description: 'Every bike has to be of some Bike Type'
+          type: string
+          format: text
+          example: 'Red Fox Freebike'
+        EBikeProfileID:
+          title: 'E-bike Profile ID'
+          description: 'Every ebike profile has defined Geofence (allowed riding areas)'
+          type: integer
+          format: int32
+          example: 10
+        LastRentalStart:
+          title: 'Last rent of bike'
+          type: string
+          format: string
+          example: '2020-06-15T00:00:00'
+          nullable: true
+        LastGPSTime:
+          title: 'Last valid GPS message'
+          type: string
+          format: string
+          example: '2020-06-15T00:00:00'
+          nullable: true
+        LastEBikeMessageTime:
+          type: string
+          format: 'date-time'
+    TKUserGroup:
+      title: User group
+      properties:
+        Name:
+          title: name
+          type: string
+        ExternalID:
+          title: external id
+          type: string
+    TKBikeType:
+      title: 'Bike Type'
+      properties:
+        Description:
+          title: bike type description
+          type: string
+          example: 'Favorit'
+        BikeTypeID:
+          description: internal id
+          type: number
+        IsEBike:
+          description: equipped with electronic (is able to communicate with backend), this flag is old and nowadays should be always true for non pedal bikes, IsSmartLock and IsMotor flag is added for description of bike equipment
+          type: boolean
+        IsSmartLock:
+          description: equipped with smart lock (not in use yet, IsEBike attribute ought to be true)
+          type: boolean
+        IsMotor:
+          description: equipped with motor, bike can be rented in motor mode (IsEBike attribute ought to be true)
+          type: boolean
+        ExternalID:
+          description: id for relation between bike types and allowed bike types for tariffs
+          type: string
+        BikeImage:
+          description: custom bike detail image
+          type: string
+          format: url
+          nullable: true
+        MapIcon:
+          description: custom map icon for bike locked outside of station
+          type: string
+          format: url
+          nullable: true
+    TKBike:
+      title: 'Bike detail'
+      allOf:
+        - $ref: '#/components/schemas/TKBikeCore'
+      properties:
+        Latitude:
+          title: 'Bike Latitude'
+          description: 'Bike coordinates if bike is locked out of station'
+          type: number
+          format: float
+          example: 11.25
+          nullable: true
+        Longitude:
+          title: 'Bike Longitude'
+          description: 'Bike coordinates if bike is locked out of station'
+          type: number
+          format: float
+          example: 0.25
+          nullable: true
+        BikeIdentifier:
+          title: 'Bike Identifier'
+          description: 'Generally contains only digits, might contains chars'
+          type: string
+          format: text
+          example: '2551'
+          nullable: true
+        AvailabilityCode:
+          title: 'Bike Availability code'
+          description: 'Is possible for rent: 1'
+          type: integer
+          format: int32
+          example: 1
+        AvailabilityMessage:
+          title: 'Bike Availability'
+          type: string
+          format: text
+          example: Availabile
+        Battery:
+          title: 'Battery status'
+          description: 'Bike max distance is deferred from Battery, show to customer recalculated with formula provided by Freebike'
+          type: integer
+          format: int32
+          example: 54
+          nullable: true
+      type: object
+    TKBikeAllBikes:
+      title: Bike with additional data
+      allOf:
+        - $ref: '#/components/schemas/TKBike'
+        - $ref: '#/components/schemas/TKBikeCore'
+      properties:
+        LocationId:
+          type: integer
+        StationId:
+          type: integer
+    TKBikeServiceData:
+      title: Bike with technical details
+      allOf:
+        - $ref: '#/components/schemas/TKBikeCore'
+      type: object
+      properties:
+        BikeSerialID:
+          type: string
+        BikePassword:
+          type: string
+        BikeTypeID:
+          type: integer
+        BikeStateID:
+          type: integer
+        BikeStateName:
+          type: string
+        UnitSerialID:
+          type: string
+        LocationID:
+          type: integer
+        Location:
+          type: string
+        StationSerialID:
+          type: string
+        StationID:
+          type: integer
+        FaultsReportedCounter:
+          type: integer
+        LastFaultReportTime:
+          type: string
+          format: 'date-time'
+        LocationCoordinates:
+          type: string
+        ReturnModeCode:
+          type: string
+        ReturnModeName:
+          type: string
+        EBikeStateID:
+          type: integer
+        IsEBike:
+          title: 'Is electronic bike'
+          description: 'Bike sends messages to Backend (bike is equipped with electronic, bluetooth etc.)'
+          type: boolean
+          format: boolean
+          example: true
+        IsSmartLock:
+          title: 'Bike has smart lock'
+          description: 'App must not send Return request, bike is returned by smart lock. Unless taking photo of locked bike is necessary, in this case Return request has to be sent after photo is taken. Read more about photos in frontend doc.'
+          type: boolean
+          format: boolean
+          example: true
+        IsMotor:
+          title: 'Has engine'
+          description: 'Electric engine might be used for ride'
+          type: boolean
+          format: boolean
+          example: false
+        EBikeCpuId:
+          type: string
+        EBikeProfileName:
+          type: string
+        EBikeBlocked:
+          type: boolean
+        EBikeUnblockable:
+          type: boolean
+        BatteryUniqueID:
+          type: string
+        EBikeStateName:
+          type: string
+        LastChargeLength:
+          type: integer
+        LastRentalLength:
+          type: integer
+        BatteryCurrent:
+          type: number
+        BatteryVoltage:
+          type: number
+        BatteryLevelPercentage:
+          type: integer
+        BatteryChargingCount:
+          type: integer
+        BatteryDischargedCount:
+          type: integer
+        ChargeStatus:
+          type: string
+        LastGPSTime:
+          type: string
+        LastElectronicsTemperature:
+          type: string
+        SimCardNumber:
+          type: string
+        PhoneNumber:
+          type: string
+        OperatorName:
+          type: string
+        CpuVersion:
+          type: string
+        ModemVersion:
+          type: string
+        ControllerVersion:
+          type: string
+        BootloaderVersion:
+          type: string
+        LastRentalCustomerId:
+          type: integer
+    TKStation:
+      title: 'Station info'
+      properties:
+        AvailableBikes:
+          title: 'List of available bikes in station locks'
+          type: array
+          format: array
+          items:
+            $ref: '#/components/schemas/TKBike'
+        BlockedBikes:
+          title: 'List of Blocked bikes in station locks'
+          type: array
+          format: array
+          items:
+            $ref: '#/components/schemas/TKBike'
+        ErrorBikes:
+          title: 'List of Error bikes in station locks'
+          type: array
+          format: array
+          items:
+            $ref: '#/components/schemas/TKBike'
+        IsEBikeStation:
+          title: 'Electric station'
+          description: 'Station can charge e-bikes'
+          type: boolean
+          format: boolean
+          example: true
+        LockCount:
+          title: 'Number of hardware locks in station'
+          type: integer
+          format: int32
+          example: 4
+          nullable: true
+        ReservedBikes:
+          title: 'List of Reserved bikes in station locks'
+          type: array
+          format: array
+          items:
+            $ref: '#/components/schemas/TKBike'
+        StationSerialID:
+          title: 'Name of station'
+          type: string
+          format: text
+          example: 'Florenc - Tramvaj'
+      type: object
+    TKRentals:
+      title: 'List of account activities'
+      properties:
+        PageNumber:
+          title: 'Page number'
+          type: integer
+          format: int32
+          example: 1
+        PageTotal:
+          title: 'Page total'
+          type: integer
+          format: int32
+          example: 8
+        TotalPrice:
+          title: 'Total rental price for customer'
+          type: number
+          format: float
+          example: 15890.5
+        TotalDuration:
+          title: 'Total rentals duration for customer'
+          type: number
+          format: string
+          example: '1106.11:56:00'
+        Rentals:
+          title: 'List of customer''s rentals'
+          type: array
+          format: array
+          items:
+            $ref: '#/components/schemas/TKRental'
+      type: object
+    TKRental:
+      title: 'Customer rental'
+      description: 'List of customer rentals'
+      properties:
+        Area:
+          title: 'Return Area name'
+          type: string
+          format: string
+          example: 'Hyde Park'
+          nullable: true
+        BatteryLevel:
+          title: 'Battery level'
+          type: integer
+          format: int32
+          example: 50
+          nullable: true
+        BikeIdentifier:
+          title: 'Bike identifier'
+          type: string
+          format: string
+          example: '058'
+          nullable: true
+        BikePassword:
+          title: 'Bike lock code'
+          type: string
+          format: string
+          example: '00818'
+          nullable: true
+        BikeTypeId:
+          title: 'Bike type ID'
+          type: string
+          format: string
+          example: 'freebike'
+        BikeTypeDescription:
+          title: 'Name of bike type'
+          type: string
+          format: string
+          example: E-bike
+        BusinessRuleExternalID:
+          title: 'Business rule id used for rental'
+          type: string
+          format: string
+          example: '00818'
+        BusinessRuleName:
+          title: 'Name of applied business rule'
+          type: string
+          format: string
+          example: 'Freebike 1 year'
+        EndLocation:
+          title: 'Location used for return'
+          type: string
+          format: string
+          example: 'Hyde Park bike station'
+          nullable: true
+        EndTime:
+          title: 'Return time'
+          type: string
+          format: string
+          example: '2019-11-14T11:36:51.897'
+        IsEbike:
+          title: 'Bike rented with motor, battery indicator should be showed'
+          type: boolean
+          format: boolean
+          example: true
+        MotorModeCode:
+          title: 'Current motor mode'
+          type: integer
+          format: int32
+          example: 1
+        MotorModeDescription:
+          title: 'Current motor mode description'
+          type: string
+          format: string
+          example: 'Insane mode'
+        Note:
+          title: 'Rental note, generally written by call center'
+          type: string
+          format: string
+          example: null
+          nullable: true
+        Price:
+          title: 'Total rental price'
+          type: number
+          format: float
+          example: 15.5
+        BreakCost:
+          title: 'Break cost'
+          type: number
+          format: float
+          example: 5.2
+          nullable: true
+        RentalCost:
+          title: 'Rental cost'
+          type: number
+          format: float
+          example: 10.30
+        RentalAreaFee:
+          title: 'Fee for area'
+          type: number
+          format: float
+          example: 10.30
+          nullable: true
+        RentalID:
+          title: 'Internal Rental ID'
+          type: integer
+          format: int32
+          example: 545416
+        RentalTypeCode:
+          title: 'Used rental type code'
+          description: 'Freebike, Ebike'
+          type: integer
+          format: int32
+          enum:
+            - 0
+            - 1
+          example: 1
+        RentalTypeDescription:
+          title: 'Rental type description'
+          description: 'Human friendly RentalTypeCode, might be different in every system. Default is Freebike and E-Bike'
+          type: string
+          format: string
+          example: Ebike
+        StartLocation:
+          title: 'Name of rental start location'
+          type: string
+          format: string
+          example: 'Hyde Park station #2'
+          nullable: true
+        StartTime:
+          title: 'Rental start time'
+          type: string
+          format: string
+          example: '2020-05-27T14:53:52.037'
+        StatusCode:
+          title: 'Card Number'
+          description: 'StatusCode meaning in StatusDescription'
+          type: integer
+          format: int32
+          enum:
+            - 1
+            - 2
+            - 3
+            - 4
+          example: 2
+        StatusDescription:
+          title: 'Human friendly StatusCode'
+          description: 'Active, Closed, To be solved, Paused'
+          type: string
+          format: string
+          example: Closed
+        Rating:
+          title: 'Rental rating'
+          type: integer
+          format: int32
+          example: 3
+          nullable: true
+        Consumed:
+          title: 'Consumed energy'
+          description: 'Energy in Wh/10, 87 = 8.7 Wh'
+          type: integer
+          format: int32
+          example: 87
+        Recuperated:
+          title: 'Recuperated energy'
+          description: 'Energy in Wh/10, 25 = 2.5 Wh'
+          type: integer
+          format: int32
+          example: 25
+        Distance:
+          title: Distance
+          description: 'In meters/10, multiple by 10 to get actual distance meters'
+          type: integer
+          format: int32
+          example: 850
+          nullable: true
+        BikeID:
+          title: 'Rental BikeID'
+          type: integer
+          format: int32
+          example: 440
+        EbikeProfileID:
+          title: 'ID of current ebike profile'
+          type: integer
+          format: int32
+          example: 2
+          nullable: true
+        BikeLatitude:
+          title: 'Current Bike Latitude'
+          description: 'Last known GPS position for not closed rentals, rental return position for Closed rentals'
+          type: number
+          format: float
+          example: 50.224
+        BikeLongitude:
+          title: 'Current Bike Longitude'
+          description: 'Last known GPS position for not closed rentals, rental return position for Closed rentals'
+          type: number
+          format: float
+          example: -0.5547
+        SmartlockReturn:
+          title: 'Rental ended with smartlock'
+          description: 'If is active, rental is waiting for exact location, EndTime ought to be filled'
+          type: boolean
+          example: true
+        PenaltyType:
+          title: 'Type of penalty'
+          description: 'Bike was returned to area with forbidden return (1) or out of geofence (2). Fee is filled in RentalAreaFee (only one fee might be applied, area fee, penalty 1 or penalty 2)'
+          nullable: true
+          type: integer
+          enum:
+            - 1
+            - 2
+        PenaltyTypeDescription:
+          title: 'Penalty description'
+          description: 'Localised penalty type description'
+          type: string
+          example: "Out of area return"
+        Breaks:
+          title: 'List of rental breaks'
+          description: 'List of breaks made during rental'
+          type: array
+          format: array
+          items:
+            $ref: '#/components/schemas/TKBreak'
+      type: object
+    TKBreak:
+      title: 'Rental break'
+      properties:
+        ID:
+          title: 'Internal Break ID'
+          type: integer
+          format: int32
+          example: 1461
+        StartTime:
+          title: 'Start time'
+          type: string
+          format: string
+          example: '2019-11-13T10:04:20.303'
+        EndTime:
+          title: 'End time'
+          type: string
+          format: string
+          example: '2019-11-13T11:04:20.303'
+        Duration:
+          title: Duration
+          type: string
+          format: string
+          example: '00:05:20'
+        DurationTicks:
+          title: 'Duration ticks'
+          type: integer
+          format: int32
+          example: '3884653352'
+        Price:
+          title: 'Break price'
+          type: number
+          format: float
+          example: 5.2
+      type: object
+    TKRentalResponse:
+      title: 'New rental'
+      properties:
+        RentalID:
+          title: 'Internal Rental ID'
+          type: integer
+          format: int32
+          example: 545416
+        RentalTypeCode:
+          title: 'Used rental type code'
+          description: 'Freebike, Ebike'
+          type: integer
+          format: int32
+          enum:
+            - 0
+            - 1
+          example: 1
+        StartTime:
+          title: 'Rental start time'
+          type: string
+          format: string
+          example: '2020-05-27T14:53:52.037'
+        BikeID:
+          title: 'Rental BikeID'
+          type: integer
+          format: int32
+          example: 440
+        BikeIdentifier:
+          title: 'Bike identifier'
+          type: string
+          format: string
+          example: '058'
+          nullable: true
+        BikePassword:
+          title: 'Bike lock code'
+          type: string
+          format: string
+          example: '00818'
+          nullable: true
+        MotorModeCode:
+          title: 'Current motor mode'
+          type: integer
+          format: int32
+          example: 1
+      type: object
+    TKRentalType:
+      title: 'Rental type'
+      properties:
+        IsDefault:
+          description: 'Default for rental if rental type not specified, only one rental type can be default'
+          type: boolean
+          example: true
+        MotorModeCode:
+          description: 'is motor in use for this rental type'
+          type: integer
+          example: 2
+        MotorModeDescription:
+          description: 'Motor Mode description, on, off'
+          type: string
+          example: 'On'
+        RentalTypeCode:
+          description: 'int used for create new rental'
+          type: integer
+          example: 1
+        RentalTypeDescription:
+          description: 'localised name of rental type'
+          type: string
+          example: ebike
+      type: object
+    TKReservation:
+      title: 'Rental reservation'
+      properties:
+        BikeId:
+          title: 'BikeID in Reservation'
+          type: integer
+          format: int32
+          example: 116
+        BikeIdentifier:
+          title: 'Bike identifier'
+          type: string
+          format: string
+          example: T003
+          nullable: true
+        Id:
+          title: 'Reservation Internal ID'
+          type: string
+          format: int32
+          example: 373
+        RentalTypeCode:
+          title: 'Rental Type code'
+          description: 'Freebike, Ebike'
+          type: integer
+          format: int32
+          enum:
+            - 0
+            - 1
+          example: 1
+        RentalTypeDescription:
+          title: 'Rental type description'
+          description: 'Human friendly RentalTypeCode, might be different in every system. Default is Freebike and E-Bike'
+          type: string
+          format: string
+          example: Ebike
+        SpikeID:
+          title: 'Spike ID'
+          description: 'Might be used for rent bike instead of BikeID'
+          type: string
+          format: text
+          example: '110'
+          nullable: true
+        StateCode:
+          title: 'Return Area name'
+          type: integer
+          format: int32
+          enum:
+            - 1
+            - 2
+            - 3
+            - 4
+          example: 1
+        StateDescription:
+          title: 'State description human friendly'
+          description: 'Pending, Confirmed, Expired, Cancelled'
+          type: string
+          format: string
+          example: Pending
+        Timeout:
+          title: 'Time for confirm Reservation since requsted'
+          type: integer
+          format: int32
+          example: 60
+      type: object
+    KITEToken:
+      title: 'Access token data'
+      properties:
+        access_token:
+          title: 'access token'
+          type: string
+          format: string
+          example: Bx5DquQZawq5n5EB-0TJ8joXS_YWtjH3A8f3TQXg7w6oURMqe8ivC1KpAsPxR8QzgEdhXAKIWi1hugk1kSfe2iHZe1PY4Fxo-RqvcXOZ1vzqogxp0uPBSZUE0r-Ik3SSkR7N7RJJNFs1acS6AYTcQO3jiRYj1F8AUuQgvcLAgxqeDKAKbyNipn92fFtj0s-bHwT_PytQMVKMPIU63K6W9EicUnntYCPkz_h2B4FwbJS8Btg3Cct8RHpBzuVg21CHgoi91Hb3ZBvjoGS7IqBXZdngsJC1d8yKiJOxg12nNJLU33uo884utj0YAVIpIXaU6Oz0tuJQm4_JiZXNzLNkajX93aKlUUpLY2jSvciMsgfnPoQGYIIkQg5qwWIMHm0s
+        token_type:
+          title: 'Token type'
+          type: string
+          format: string
+          example: bearer
+        expires_in:
+          title: 'Token expiration in seconds'
+          type: integer
+          format: int32
+          example: 86399
+        refresh_token:
+          title: 'Refresh token'
+          type: string
+          format: string
+          example: 779654d79163432da9fe5fed017e5c84
+        as:client_id:
+          title: 'Used client_id'
+          type: string
+          format: string
+          example: iphone
+        as:user_id:
+          title: 'Customer ID of customer in system'
+          type: string
+          format: string
+          example: '1132'
+        as:user_agent_id:
+          title: 'user agent id'
+          type: string
+          format: string
+          example: 14ca63c3bb274ec1b1f99dac541d1e5e
+        .issued:
+          title: 'Date time of issuing token'
+          type: string
+          format: string
+          example: 'Wed, 24 Jun 2020 12:20:35 GMT'
+        .expires:
+          title: 'Date time of expiring token'
+          type: string
+          format: string
+          example: 'Thu, 25 Jun 2020 12:20:35 GMT'
+      type: object
+    TKServiceTask:
+      title: Service Task
+      type: object
+      properties:
+        Id:
+          title: Task ID
+          type: integer
+          example: 42
+        AdditionalInfo:
+          title: additional task info
+          type: string
+          nullable: true
+          example: null
+        AssignedTo:
+          title: Name of service user to solve this task
+          type: string
+          nullable: true
+        AssignedToUserId:
+          title: ID of service user to solve this task
+          type: integer
+          nullable: true
+        AssignmentId:
+          title: ID of service task type
+          example: 42
+          type: integer
+        Assignment:
+          title: Name of service task type
+          example: Regular castle maintenance
+          type: string
+        EquipmentId:
+          title: ID of equipment taks belongs to
+          example: 42
+          type: integer
+        Equipment:
+          title: Name of equipment task belongs to
+          example: Hogwarts
+          type: string
+        EquipmentType:
+          title: Name of equipment type
+          example: Station
+          type: string
+        Escalate:
+          title: Escalate task
+          type: boolean
+          default: false
+        Location:
+          title: Location name task belongs to
+          type: string
+          nullable: true
+        Note:
+          title: Note for task
+          type: string
+          nullable: true
+        Priority:
+          title: Task priority
+          type: string
+        State:
+          title: Task state
+          type: string
+        CreatedTime:
+          title: Created time
+          type: string
+          format: 'date-time'
+        ChangedTime:
+          title: Created time
+          type: string
+          format: 'date-time'
+    TKEquipment:
+      type: object
+      description: Equipment
+      properties:
+        Id:
+          type: integer
+        Description:
+          type: string
+          description: localized equipment description
+    TKEquipmentType:
+      type: object
+      description: Equipment type
+      properties:
+        Id:
+          type: integer
+        Description:
+          type: string
+          description: localized equipment type description
+    TKTaskPriority:
+      type: object
+      description: Task priority
+      properties:
+        Id:
+          type: integer
+        Description:
+          type: string
+          description: localized task priority description
+    TKTaskState:
+      type: object
+      description: Task state
+      properties:
+        Id:
+          type: integer
+        Description:
+          type: string
+          description: localized task state description
+    TKRepairState:
+      type: object
+      description: Repair state
+      properties:
+        Id:
+          type: integer
+        Description:
+          type: string
+          description: localized repair state description
+    TKBikeState:
+      type: object
+      description: Bike state
+      properties:
+        stateId:
+          type: integer
+        name:
+          type: string
+          description: localized bike state name
+    TKEBikeState:
+      type: object
+      description: EBike state
+      properties:
+        stateId:
+          type: integer
+        name:
+          type: string
+          description: localized bike state name
+    TKTaskType:
+      type: object
+      description: Task type
+      properties:
+        TaskTypeID:
+          type: integer
+          example: 1
+        Code:
+          type: integer
+          example: 72
+        Description:
+          type: string
+          example: "E-kolo varování"
+        RequiresMaintenance:
+          type: boolean
+          example: false
+        IsSystem:
+          type: boolean
+        MaxSolveTime:
+          type: integer
+          nullable: true
+        FK_DefaultPriority:
+          type: integer
+        DefaultPriorityDescription:
+          type: string
+        DefaultEscalate:
+          type: boolean
+        LanguageID:
+          type: integer
+        LangCode:
+          type: string
+        IsDefault:
+          type: boolean
+        IsExtPublished:
+          type: boolean
+        FK_EquipmentType:
+          type: integer
+        EquipmentType:
+          type: string
+        EquipmentTypeCode:
+          type: integer
+    TKSparePart:
+      type: object
+      description: Spare part
+      properties:
+        SparePartID:
+          type: integer
+          example: 42
+        Description:
+          type: string
+          example: Cover box
+        ExternalID:
+          type: string
+          nullable: true
+          example: CVR_BOX
+        EquipmentType:
+          type: string
+          example: Jednotka
+    UserRole:
+      type: object
+      description: Role of user in Backend
+      properties:
+        RoleID:
+          type: integer
+        ExternalID:
+          type: string
+    User:
+      type: object
+      description: User of Backend
+      properties:
+        UserID:
+          type: integer
+        Name:
+          type: string
+        Surname:
+          type: string
+        IsServiceman:
+          type: boolean
+        Roles:
+          type: array
+          items:
+            $ref: '#/components/schemas/UserRole'
+    TKFaultType:
+      type: object
+      description: Fault type
+      properties:
+        MaintenanceFaultTypeID:
+          type: integer
+        Name:
+          type: string
+        EquipmentType:
+          type: string
+        IDMaintenanceOperation:
+          type: integer
+    TKMaintenanceOperation:
+      type: object
+      description: Maintenace operations, belongs to Repair
+      properties:
+        MaintenanceOperationID:
+          type: integer
+        Name:
+          type: string
+        EquipmentType:
+          type: string
+        SpareParts:
+          type: array
+          items:
+            $ref: '#/components/schemas/TKSparePart'
+    TKRepair:
+      type: object
+      description: Repairs belongs to task
+      required: [ FK_EquipmentType,FK_Equipment,FK_MaintenanceFaultType,FK_MaintenanceOperation,FK_State,FK_Task ]
+      properties:
+        FK_EquipmentType:
+          type: integer
+        FK_Equipment:
+          type: integer
+        FK_MaintenanceFaultType:
+          type: integer
+        FK_MaintenanceOperation:
+          type: integer
+        FK_State":
+          type: integer
+        MaintenanceTime:
+          type: string
+          format: 'date-time'
+        InField:
+          type: boolean
+        Length:
+          type: integer
+          description: duration of repair in minutes
+        Note:
+          type: string
+        FK_Task:
+          type: integer
+          description: ID of task repair belongs to
+    ExtendedTKRepair:
+      allOf:
+        - $ref: '#/components/schemas/TKRepair'
+        - type: object
+          properties:
+            StatusDescription:
+              type: string
+            CreatedTime:
+              type: string
+              format: 'date-time'
+            CreatedBy:
+              type: string
+            ChangedTime:
+              type: string
+              format: 'date-time'
+              nullable: true
+            ChangedBy:
+              type: string
+              nullable: true
+            RecordVer:
+              type: string
+            SpareParts:
+              type: array
+              items:
+                $ref: '#/components/schemas/TKSparePart'
+
+  securitySchemes:
+    bearerAuth:
+      type: http
+      description: 'Bearer auth'
+      bearerFormat: JWT
+      scheme: bearer

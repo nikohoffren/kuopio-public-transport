@@ -156,46 +156,23 @@ export default class DataFetcher {
     }
 
     async fetchAndDisplayVilkkuBicycles() {
-        const apiUrl = "/api/vilkkuBicycles";
+        const apiUrl = "https://tkhs-integration.azurewebsites.net/Services/Api/AllBikes";
 
         try {
             const response = await fetch(apiUrl);
 
             if (!response.ok) {
-                throw new Error(
-                    `API request failed with status ${response.status}`
-                );
+                throw new Error(`API request failed with status ${response.status}`);
             }
 
-            const data = await response.text();
-            console.log("Vilkku bicycles data: " + data);
+            const data = await response.json();
 
-            //* Check if the XML document has a root element
-            if (!data || data.trim() === "") {
-                console.error("The XML document is empty or not well-formed.");
-                return;
-            }
-
-            const parser = new DOMParser();
-            const xmlData = parser.parseFromString(data, "application/xml");
-            const bicycleStations = xmlData.getElementsByTagName("marker");
-
-            console.log("Number of bicycle stations:", bicycleStations.length);
-
-            //* Check if the parsed XML document has a root element
-            if (xmlData.documentElement.nodeName === "parsererror") {
-                console.error("XML parsing error: no root element found.");
-                return;
-            }
-
-            for (const station of bicycleStations) {
-                const lat = parseFloat(station.getAttribute("lat"));
-                const lng = parseFloat(station.getAttribute("lng"));
-                const position = { lat, lng };
+            for (const bike of data) {
+                const position = { lat: bike.Latitude, lng: bike.Longitude };
 
                 const marker = new google.maps.Marker({
                     position,
-                    map,
+                    map: this.map,
                     icon: {
                         url: "img/vilkku-bicycle-icon.jpg",
                         scaledSize: new google.maps.Size(30, 30),
@@ -203,13 +180,11 @@ export default class DataFetcher {
                 });
 
                 const infoWindow = new google.maps.InfoWindow({
-                    content: `${station.getAttribute(
-                        "name"
-                    )}: ${station.getAttribute("bikes")} pyörää vapaana`,
+                    content: `${bike.BikeIdentifier}: ${bike.AvailabilityMessage}`,
                 });
 
                 marker.addListener("click", () => {
-                    infoWindow.open(map, marker);
+                    infoWindow.open(this.map, marker);
                 });
             }
         } catch (error) {

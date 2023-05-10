@@ -1,31 +1,30 @@
-const fetch = require("node-fetch");
 const axios = require("axios");
 
 exports.handler = async (event, context) => {
   try {
-    const response = await axios.get("https://kaupunkipyorat.kuopio.fi/tkhs-export-map.html?format=xml", {
+    const response = axios.get('https://tkhs-integration.azurewebsites.net/Services/Api/AllBikes', {
       headers: {
-        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:89.0) Gecko/20100101 Firefox/89.0",
-      },
-    });
+        'Authorization': `Bearer ${yourJwtToken}`
+      }
+    })
 
-    const xmlData = response.data;
+    const jsonData = response.data;
 
-    console.log("Fetched XML data:", xmlData);
+    console.log("Fetched JSON data:", jsonData);
 
     return {
       statusCode: 200,
       headers: {
-        "Content-Type": "application/xml",
+        "Content-Type": "application/json",
       },
-      body: xmlData,
+      body: JSON.stringify(jsonData),
     };
   } catch (error) {
-    console.error("Error fetching XML data:", error);
+    console.error("Error fetching JSON data:", error);
 
     return {
       statusCode: 500,
-      body: "Error fetching XML data!",
+      body: "Error fetching JSON data!",
     };
   }
 };
