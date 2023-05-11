@@ -1,5 +1,5 @@
 const express = require("express");
-const cors = require('cors');
+const cors = require("cors");
 const fetch = require("node-fetch");
 const transit_realtime = require("../functions/gtfs-realtime").transit_realtime;
 require("dotenv").config();
@@ -7,15 +7,17 @@ require("dotenv").config();
 const router = express.Router();
 router.use(cors());
 
-router.get('/free_bike_status', async (req, res) => {
+//* bike & bike stations data
+router.get("/free_bike_status", async (req, res) => {
     try {
-      const bikeData = await fetchBikeData();
-      res.json(JSON.parse(bikeData.body));
+        const bikeData = await fetchBikeData();
+        res.json(JSON.parse(bikeData.body));
     } catch (error) {
-      res.status(500).json({ error: 'Error fetching bike data' });
+        res.status(500).json({ error: "Error fetching bike data" });
     }
-  });
+});
 
+//* bus positions data
 router.get("/vehiclepositions", async (req, res) => {
     const apiUrl =
         "https://opendatavilkku.mattersoft.fi/rtapi/gtfsrealtime/v1.0/feed/vehicleposition";

@@ -165,15 +165,22 @@ export default class DataFetcher {
             const response = await fetch(apiUrl);
 
             if (!response.ok) {
-                throw new Error(`API request failed with status ${response.status}`);
+                throw new Error(
+                    `API request failed with status ${response.status}`
+                );
             }
 
             const data = await response.json();
 
             for (const bike of data.bikeData.data.bikes) {
                 //* Validate the coordinates
-                if (typeof bike.lat !== 'number' || typeof bike.lon !== 'number') {
-                    console.error(`Invalid coordinates for bike ${bike.bike_id}: lat = ${bike.lat}, lon = ${bike.lon}`);
+                if (
+                    typeof bike.lat !== "number" ||
+                    typeof bike.lon !== "number"
+                ) {
+                    console.error(
+                        `Invalid coordinates for bike ${bike.bike_id}: lat = ${bike.lat}, lon = ${bike.lon}`
+                    );
                     continue;
                 }
 
@@ -189,7 +196,9 @@ export default class DataFetcher {
                 });
 
                 const infoWindow = new google.maps.InfoWindow({
-                    content: `ID: ${bike.bike_id}, Akun varaus: ${bike.current_fuel_percent * 100}%`,
+                    content: `ID: ${bike.bike_id}, Akun varaus: ${
+                        bike.current_fuel_percent * 100
+                    }%`,
                 });
 
                 marker.addListener("click", () => {
@@ -200,37 +209,38 @@ export default class DataFetcher {
             const stationStatusById = {};
 
             for (const station of data.stationStatusData.data.stations) {
-              stationStatusById[station.station_id] = station;
+                stationStatusById[station.station_id] = station;
             }
 
             for (const station of data.stationInformationData.data.stations) {
-              const stationStatus = stationStatusById[station.station_id];
-              if (stationStatus) {
-                const position = { lat: station.lat, lng: station.lon };
+                const stationStatus = stationStatusById[station.station_id];
+                if (stationStatus) {
+                    const position = { lat: station.lat, lng: station.lon };
 
-                const marker = new google.maps.Marker({
-                  position,
-                  map: this.map,
-                  icon: {
-                    url: "img/vilkku-logo.png",
-                    scaledSize: new google.maps.Size(30, 30),
-                  },
-                });
+                    const marker = new google.maps.Marker({
+                        position,
+                        map: this.map,
+                        icon: {
+                            url: "img/vilkku-logo.png",
+                            scaledSize: new google.maps.Size(30, 30),
+                        },
+                    });
 
-                const infoWindow = new google.maps.InfoWindow({
-                  content: `Asema: ${station.name}, Pyöriä vapaana: ${stationStatus.num_bikes_available}`,
-                });
+                    const infoWindow = new google.maps.InfoWindow({
+                        content: `Asema: ${station.name}, Pyöriä vapaana: ${stationStatus.num_bikes_available}`,
+                    });
 
-                marker.addListener("click", () => {
-                  infoWindow.open(this.map, marker);
-                });
-              } else {
-                console.warn(`No status information found for station ${station.station_id}`);
-              }
+                    marker.addListener("click", () => {
+                        infoWindow.open(this.map, marker);
+                    });
+                } else {
+                    console.warn(
+                        `No status information found for station ${station.station_id}`
+                    );
+                }
             }
         } catch (error) {
             console.error("Error fetching VILKKU bicycle data:", error);
         }
     }
-
 }

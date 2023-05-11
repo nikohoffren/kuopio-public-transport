@@ -46,7 +46,11 @@ export async function initMap() {
         busData
     );
 
-    dataFetcher.fetchAndDisplayFreeBikeLocations();
+    function updateBikeLocations() {
+        dataFetcher.fetchAndDisplayFreeBikeLocations().then(() => {
+            setTimeout(updateBikeLocations, 60000);
+        });
+    }
 
     function updateBusPositions() {
         dataFetcher.fetchAndDisplayBusLocations().then(() => {
@@ -149,14 +153,17 @@ export async function initMap() {
         }
     });
 
+    updateBikeLocations();
     updateBusPositions();
     updateServiceAlerts();
     updateTripUpdates();
 }
 
-document.getElementById("followBusCheckbox").addEventListener("change", (event) => {
-    followBus = event.target.checked;
-});
+document
+    .getElementById("followBusCheckbox")
+    .addEventListener("change", (event) => {
+        followBus = event.target.checked;
+    });
 
 followBusCheckbox.addEventListener("change", (event) => {
     dataFetcher.setShouldFollowBus(event.target.checked);
