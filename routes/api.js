@@ -1,9 +1,20 @@
 const express = require("express");
+const cors = require('cors');
 const fetch = require("node-fetch");
 const transit_realtime = require("../functions/gtfs-realtime").transit_realtime;
 require("dotenv").config();
 
 const router = express.Router();
+router.use(cors());
+
+router.get('/free_bike_status', async (req, res) => {
+    try {
+      const bikeData = await fetchBikeData();
+      res.json(JSON.parse(bikeData.body));
+    } catch (error) {
+      res.status(500).json({ error: 'Error fetching bike data' });
+    }
+  });
 
 router.get("/vehiclepositions", async (req, res) => {
     const apiUrl =

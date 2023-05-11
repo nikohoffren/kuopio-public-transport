@@ -2,11 +2,7 @@ const axios = require("axios");
 
 exports.handler = async (event, context) => {
   try {
-    const response = axios.get('https://tkhs-integration.azurewebsites.net/Services/Api/AllBikes', {
-      headers: {
-        'Authorization': `Bearer ${yourJwtToken}`
-      }
-    })
+    const response = await axios.get('https://tkhskuopiostrg.blob.core.windows.net/gbfs/free_bike_status.json');
 
     const jsonData = response.data;
 

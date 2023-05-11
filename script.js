@@ -46,7 +46,7 @@ export async function initMap() {
         busData
     );
 
-    dataFetcher.fetchAndDisplayVilkkuBicycles();
+    dataFetcher.fetchAndDisplayFreeBikeLocations();
 
     function updateBusPositions() {
         dataFetcher.fetchAndDisplayBusLocations().then(() => {

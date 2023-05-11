@@ -155,8 +155,11 @@ export default class DataFetcher {
         }
     }
 
-    async fetchAndDisplayVilkkuBicycles() {
-        const apiUrl = "https://tkhs-integration.azurewebsites.net/Services/Api/AllBikes";
+    async fetchAndDisplayFreeBikeLocations() {
+        const apiUrl =
+            window.location.hostname === "localhost"
+                ? "http://localhost:3999/.netlify/functions/vilkkuBicycles"
+                : "/.netlify/functions/vilkkuBicycles";
 
         try {
             const response = await fetch(apiUrl);
@@ -167,20 +170,26 @@ export default class DataFetcher {
 
             const data = await response.json();
 
-            for (const bike of data) {
-                const position = { lat: bike.Latitude, lng: bike.Longitude };
+            for (const bike of data.data.bikes) {
+                //* Validate the coordinates
+                if (typeof bike.lat !== 'number' || typeof bike.lon !== 'number') {
+                    console.error(`Invalid coordinates for bike ${bike.bike_id}: lat = ${bike.lat}, lon = ${bike.lon}`);
+                    continue;
+                }
+
+                const position = { lat: bike.lat, lng: bike.lon };
 
                 const marker = new google.maps.Marker({
                     position,
                     map: this.map,
                     icon: {
-                        url: "img/vilkku-bicycle-icon.jpg",
+                        url: "img/vilkku-bicycle-icon.png",
                         scaledSize: new google.maps.Size(30, 30),
                     },
                 });
 
                 const infoWindow = new google.maps.InfoWindow({
-                    content: `${bike.BikeIdentifier}: ${bike.AvailabilityMessage}`,
+                    content: `ID: ${bike.bike_id}, Akun varaus: ${bike.current_fuel_percent * 100}%`,
                 });
 
                 marker.addListener("click", () => {
@@ -191,4 +200,5 @@ export default class DataFetcher {
             console.error("Error fetching VILKKU bicycle data:", error);
         }
     }
+
 }
