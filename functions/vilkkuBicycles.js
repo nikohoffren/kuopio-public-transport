@@ -2,9 +2,15 @@ const axios = require("axios");
 
 exports.handler = async (event, context) => {
   try {
-    const response = await axios.get('https://tkhskuopiostrg.blob.core.windows.net/gbfs/free_bike_status.json');
+    const bikeStatusResponse = await axios.get('https://tkhskuopiostrg.blob.core.windows.net/gbfs/free_bike_status.json');
+    const stationStatusResponse = await axios.get('https://tkhskuopiostrg.blob.core.windows.net/gbfs/station_status.json');
+    const stationInformationResponse = await axios.get('https://tkhskuopiostrg.blob.core.windows.net/gbfs/station_information.json');
 
-    const jsonData = response.data;
+    const jsonData = {
+      bikeData: bikeStatusResponse.data,
+      stationStatusData: stationStatusResponse.data,
+      stationInformationData: stationInformationResponse.data
+    };
 
     console.log("Fetched JSON data:", jsonData);
 

@@ -170,7 +170,7 @@ export default class DataFetcher {
 
             const data = await response.json();
 
-            for (const bike of data.data.bikes) {
+            for (const bike of data.bikeData.data.bikes) {
                 //* Validate the coordinates
                 if (typeof bike.lat !== 'number' || typeof bike.lon !== 'number') {
                     console.error(`Invalid coordinates for bike ${bike.bike_id}: lat = ${bike.lat}, lon = ${bike.lon}`);
@@ -195,6 +195,38 @@ export default class DataFetcher {
                 marker.addListener("click", () => {
                     infoWindow.open(this.map, marker);
                 });
+            }
+
+            const stationStatusById = {};
+
+            for (const station of data.stationStatusData.data.stations) {
+              stationStatusById[station.station_id] = station;
+            }
+
+            for (const station of data.stationInformationData.data.stations) {
+              const stationStatus = stationStatusById[station.station_id];
+              if (stationStatus) {
+                const position = { lat: station.lat, lng: station.lon };
+
+                const marker = new google.maps.Marker({
+                  position,
+                  map: this.map,
+                  icon: {
+                    url: "img/vilkku-logo.png",
+                    scaledSize: new google.maps.Size(30, 30),
+                  },
+                });
+
+                const infoWindow = new google.maps.InfoWindow({
+                  content: `Asema: ${station.name}, Pyöriä vapaana: ${stationStatus.num_bikes_available}`,
+                });
+
+                marker.addListener("click", () => {
+                  infoWindow.open(this.map, marker);
+                });
+              } else {
+                console.warn(`No status information found for station ${station.station_id}`);
+              }
             }
         } catch (error) {
             console.error("Error fetching VILKKU bicycle data:", error);
