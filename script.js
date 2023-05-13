@@ -78,7 +78,11 @@ export async function initMap() {
     //* create markers
     const markers = [
         [
-            `<strong>Bike Taxi Kuopio</strong><br>Soita ja tilaa: 044 4410 520<br><a href="https://www.biketaxi.fi/hinnasto/?kaupunki=kuopio" target="_blank">www.biketaxi.fi</a>`,
+            `
+            <div class="card">
+                <strong>Bike Taxi Kuopio</strong><br>Soita ja tilaa: 044 4410 520<br><a href="https://www.biketaxi.fi/hinnasto/?kaupunki=kuopio" target="_blank">www.biketaxi.fi</a>
+            </div>
+            `,
             62.892575633523094,
             27.696424354781517,
             "img/biketaxi-kuopio.png",

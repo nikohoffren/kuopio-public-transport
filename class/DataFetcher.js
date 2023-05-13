@@ -10,7 +10,7 @@ export default class DataFetcher {
 
     setShouldFollowBus(newValue) {
         this.shouldFollowBus = newValue;
-        //* If shouldFollowBus is set to false, also unset the followed bus
+        //* if shouldFollowBus is set to false, also unset the followed bus
         if (!newValue && this.followedBusId !== null) {
             this.busData[this.followedBusId].labelOverlay.isFollowed = false;
             this.followedBusId = null;
@@ -89,9 +89,11 @@ export default class DataFetcher {
                     const infoWindow = this.busData[busId].infoWindow;
                     infoWindow.setContent(
                         `
-                        <strong>Linja: ${bus.trip.routeId}</strong><br>
-                        Reitti: ${bus.vehicle.label}<br>
-                        Nopeus: ${(bus.position.speed * 3.6).toFixed(2)} km/h.
+                        <div class="card">
+                            <strong>Linja: ${bus.trip.routeId}</strong><br>
+                            Reitti: ${bus.vehicle.label}<br>
+                            Nopeus: ${(bus.position.speed * 3.6).toFixed(2)} km/h.
+                        </div>
                         `
                     );
 
@@ -172,39 +174,39 @@ export default class DataFetcher {
 
             const data = await response.json();
 
-            for (const bike of data.bikeData.data.bikes) {
-                //* Validate the coordinates
-                if (
-                    typeof bike.lat !== "number" ||
-                    typeof bike.lon !== "number"
-                ) {
-                    console.error(
-                        `Invalid coordinates for bike ${bike.bike_id}: lat = ${bike.lat}, lon = ${bike.lon}`
-                    );
-                    continue;
-                }
+            // for (const bike of data.bikeData.data.bikes) {
+            //
+            //     if (
+            //         typeof bike.lat !== "number" ||
+            //         typeof bike.lon !== "number"
+            //     ) {
+            //         console.error(
+            //             `Invalid coordinates for bike ${bike.bike_id}: lat = ${bike.lat}, lon = ${bike.lon}`
+            //         );
+            //         continue;
+            //     }
 
-                const position = { lat: bike.lat, lng: bike.lon };
+            //     const position = { lat: bike.lat, lng: bike.lon };
 
-                const marker = new google.maps.Marker({
-                    position,
-                    map: this.map,
-                    icon: {
-                        url: "img/vilkku-bicycle-icon.png",
-                        scaledSize: new google.maps.Size(30, 30),
-                    },
-                });
+            //     const marker = new google.maps.Marker({
+            //         position,
+            //         map: this.map,
+            //         icon: {
+            //             url: "img/vilkku-bicycle-icon.png",
+            //             scaledSize: new google.maps.Size(30, 30),
+            //         },
+            //     });
 
-                const infoWindow = new google.maps.InfoWindow({
-                    content: `ID: ${bike.bike_id}, Akun varaus: ${
-                        bike.current_fuel_percent * 100
-                    }%`,
-                });
+            //     const infoWindow = new google.maps.InfoWindow({
+            //         content: `ID: ${bike.bike_id}, Akun varaus: ${
+            //             bike.current_fuel_percent * 100
+            //         }%`,
+            //     });
 
-                marker.addListener("click", () => {
-                    infoWindow.open(this.map, marker);
-                });
-            }
+            //     marker.addListener("click", () => {
+            //         infoWindow.open(this.map, marker);
+            //     });
+            // }
 
             const stationStatusById = {};
 
@@ -227,7 +229,13 @@ export default class DataFetcher {
                     });
 
                     const infoWindow = new google.maps.InfoWindow({
-                        content: `Asema: ${station.name}, Pyöriä vapaana: ${stationStatus.num_bikes_available}`,
+                        content: `
+                            <div class="card">
+                                <p><strong>Asema: ${station.name}</strong></p>
+                                <p>Pyöriä vapaana: ${stationStatus.num_bikes_available}</p>
+                                <p><a href='https://kaupunkipyorat.kuopio.fi/ajelulle.html' target='_blank'>Osta lippu</a></p>
+                            </div>
+                        `,
                     });
 
                     marker.addListener("click", () => {
