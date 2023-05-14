@@ -7,6 +7,8 @@ export default class DataFetcher {
         this.followedBusId = null;
         this.shouldFollowBus = false;
         this.showBusMarkers = true;
+        this.showBikeMarkers = true;
+        this.busMarkers = {};
         this.bikeMarkers = {};
     }
 
@@ -26,6 +28,7 @@ export default class DataFetcher {
             marker.setVisible(this.showBusMarkers);
         });
     }
+
     setShowBikeMarkers(visible) {
         this.showBikeMarkers = visible;
         //* Loop through all bike station markers and set their visibility
@@ -187,7 +190,63 @@ export default class DataFetcher {
 
             const data = await response.json();
 
-            // for (const bike of data.bikeData.data.bikes) {
+            const stationStatusById = {};
+
+            for (const station of data.stationStatusData.data.stations) {
+                stationStatusById[station.station_id] = station;
+            }
+
+            for (const station of data.stationInformationData.data.stations) {
+                const stationStatus = stationStatusById[station.station_id];
+                if (stationStatus) {
+                    const position = { lat: station.lat, lng: station.lon };
+
+                    //* Remove the old marker for the same bike station if it exists
+                    if (this.bikeMarkers[station.station_id]) {
+                        this.bikeMarkers[station.station_id].setMap(null);
+                        delete this.bikeMarkers[station.station_id];
+                    }
+
+                    //* Create a new marker only if the checkbox for showing bike markers is checked
+                    if (this.showBikeMarkers) {
+                        const marker = new google.maps.Marker({
+                            position,
+                            map: this.map,
+                            icon: {
+                                url: "img/vilkku-logo.png",
+                                scaledSize: new google.maps.Size(30, 30),
+                            },
+                        });
+
+                        this.bikeMarkers[station.station_id] = marker;
+
+                        const infoWindow = new google.maps.InfoWindow({
+                            content: `
+                                <div class="card">
+                                    <p><strong>Asema: ${station.name}</strong></p>
+                                    <p>Pyöriä vapaana: ${stationStatus.num_bikes_available}</p>
+                                    <p><a href='https://kaupunkipyorat.kuopio.fi/ajelulle.html' target='_blank'>Osta lippu</a></p>
+                                </div>
+                            `,
+                        });
+
+                        marker.addListener("click", () => {
+                            infoWindow.open(this.map, marker);
+                        });
+                    }
+                } else {
+                    console.warn(
+                        `No status information found for station ${station.station_id}`
+                    );
+                }
+            }
+        } catch (error) {
+            console.error("Error fetching VILKKU bicycle data:", error);
+        }
+    }
+}
+
+   // for (const bike of data.bikeData.data.bikes) {
             //
             //     if (
             //         typeof bike.lat !== "number" ||
@@ -220,50 +279,3 @@ export default class DataFetcher {
             //         infoWindow.open(this.map, marker);
             //     });
             // }
-
-            const stationStatusById = {};
-
-            for (const station of data.stationStatusData.data.stations) {
-                stationStatusById[station.station_id] = station;
-            }
-
-            for (const station of data.stationInformationData.data.stations) {
-                const stationStatus = stationStatusById[station.station_id];
-                if (stationStatus) {
-                    const position = { lat: station.lat, lng: station.lon };
-
-                    const marker = new google.maps.Marker({
-                        position,
-                        map: this.map,
-                        icon: {
-                            url: "img/vilkku-logo.png",
-                            scaledSize: new google.maps.Size(30, 30),
-                        },
-                    });
-
-                    this.bikeMarkers[station.station_id] = marker;
-
-                    const infoWindow = new google.maps.InfoWindow({
-                        content: `
-                            <div class="card">
-                                <p><strong>Asema: ${station.name}</strong></p>
-                                <p>Pyöriä vapaana: ${stationStatus.num_bikes_available}</p>
-                                <p><a href='https://kaupunkipyorat.kuopio.fi/ajelulle.html' target='_blank'>Osta lippu</a></p>
-                            </div>
-                        `,
-                    });
-
-                    marker.addListener("click", () => {
-                        infoWindow.open(this.map, marker);
-                    });
-                } else {
-                    console.warn(
-                        `No status information found for station ${station.station_id}`
-                    );
-                }
-            }
-        } catch (error) {
-            console.error("Error fetching VILKKU bicycle data:", error);
-        }
-    }
-}

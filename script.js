@@ -70,6 +70,10 @@ export async function initMap() {
         });
     }
 
+    followBusCheckbox.addEventListener("change", (event) => {
+        dataFetcher.setShouldFollowBus(event.target.checked);
+    });
+
     document.getElementById('showBusCheckbox').addEventListener('change', function() {
         dataFetcher.setShowBusMarkers(this.checked);
     });
@@ -176,10 +180,6 @@ document
     .addEventListener("change", (event) => {
         followBus = event.target.checked;
     });
-
-followBusCheckbox.addEventListener("change", (event) => {
-    dataFetcher.setShouldFollowBus(event.target.checked);
-});
 
 function updatePolylineOptions(isWalkingRoute) {
     directionsRenderer.setOptions({
