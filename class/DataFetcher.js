@@ -6,6 +6,8 @@ export default class DataFetcher {
         this.busData = busData;
         this.followedBusId = null;
         this.shouldFollowBus = false;
+        this.showBusMarkers = true;
+        this.bikeMarkers = {};
     }
 
     setShouldFollowBus(newValue) {
@@ -15,6 +17,21 @@ export default class DataFetcher {
             this.busData[this.followedBusId].labelOverlay.isFollowed = false;
             this.followedBusId = null;
         }
+    }
+
+    setShowBusMarkers(visible) {
+        this.showBusMarkers = visible;
+        //* Loop through all bus markers and set their visibility
+        Object.values(this.busMarkers).forEach(marker => {
+            marker.setVisible(this.showBusMarkers);
+        });
+    }
+    setShowBikeMarkers(visible) {
+        this.showBikeMarkers = visible;
+        //* Loop through all bike station markers and set their visibility
+        Object.values(this.bikeMarkers).forEach(marker => {
+            marker.setVisible(this.showBikeMarkers);
+        });
     }
 
     async fetchAndDisplayBusLocations() {
@@ -27,14 +44,11 @@ export default class DataFetcher {
             const response = await fetch(apiUrl);
 
             if (!response.ok) {
-                throw new Error(
-                    `API request failed with status ${response.status}`
-                );
+                throw new Error(`API request failed with status ${response.status}`);
             }
 
             //* Process and display the bus locations on the map
             const data = await response.json();
-            // console.log("Vilkku bus data:", data);
 
             for (const busEntity of data.entity) {
                 const bus = busEntity.vehicle;
@@ -50,9 +64,7 @@ export default class DataFetcher {
                         content: `
                             <strong>Linja: ${bus.trip.routeId}</strong><br>
                             Reitti: ${bus.vehicle.label}<br>
-                            Nopeus: ${(bus.position.speed * 3.6).toFixed(
-                                2
-                            )} km/h.
+                            Nopeus: ${(bus.position.speed * 3.6).toFixed(2)} km/h.
                         `,
                     });
 
@@ -66,9 +78,7 @@ export default class DataFetcher {
                         () => {
                             if (this.shouldFollowBus) {
                                 if (this.followedBusId !== null) {
-                                    this.busData[
-                                        this.followedBusId
-                                    ].labelOverlay.isFollowed = false;
+                                    this.busData[this.followedBusId].labelOverlay.isFollowed = false;
                                 }
                                 this.followedBusId = busId;
                                 labelOverlay.isFollowed = true;
@@ -104,6 +114,9 @@ export default class DataFetcher {
                     if (labelOverlay.isFollowed) {
                         this.map.setCenter(position);
                     }
+
+                    //* Set the marker visibility based on the showBusMarkers flag
+                    labelOverlay.marker.setVisible(this.showBusMarkers);
                 }
             }
         } catch (error) {
@@ -227,6 +240,8 @@ export default class DataFetcher {
                             scaledSize: new google.maps.Size(30, 30),
                         },
                     });
+
+                    this.bikeMarkers[station.station_id] = marker;
 
                     const infoWindow = new google.maps.InfoWindow({
                         content: `

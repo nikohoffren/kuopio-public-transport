@@ -70,6 +70,14 @@ export async function initMap() {
         });
     }
 
+    document.getElementById('showBusCheckbox').addEventListener('change', function() {
+        dataFetcher.setShowBusMarkers(this.checked);
+    });
+
+    document.getElementById('showBicycleCheckbox').addEventListener('change', function() {
+        dataFetcher.setShowBikeMarkers(this.checked);
+    });
+
     directionsService = new google.maps.DirectionsService();
     directionsRenderer = new google.maps.DirectionsRenderer();
     directionsRenderer.setMap(map);
@@ -222,6 +230,8 @@ function drawCustomPolyline(response, isWalkingRoute) {
     return polyline;
 }
 
+
+
 function createBusIconWithNumber(number) {
     return new Promise((resolve, reject) => {
         const canvas = document.createElement("canvas");
@@ -295,6 +305,13 @@ function defineLabelOverlay() {
             this.position = position;
             if (this.marker) {
                 this.marker.setPosition(position);
+            }
+        }
+
+        //* Add this method to control the visibility of the marker
+        setVisible(visible) {
+            if (this.marker) {
+                this.marker.setVisible(visible);
             }
         }
     }
