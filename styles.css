@@ -197,3 +197,7 @@ button:hover {
 .blinking {
     animation: blinking 1.5s linear infinite;
 }
+
+.checkboxes {
+    width: 8.5em;
+}
