@@ -130,7 +130,9 @@ export default class DataFetcher {
                             <div class="card">
                                 <strong>Linja: ${bus.trip.routeId}</strong><br>
                                 Reitti: ${bus.vehicle.label}<br>
-                                Nopeus: ${(bus.position.speed * 3.6).toFixed(2)} km/h.
+                                Nopeus: ${(bus.position.speed * 3.6).toFixed(
+                                    2
+                                )} km/h.
                                 <p><a href='https://vilkku.kuopio.fi/' target='_blank'>Osta lippu</a></p>
                             </div>
                         `
@@ -146,12 +148,12 @@ export default class DataFetcher {
                         this.map.setCenter(position);
                     }
 
-                    // Update the marker's position with animation
+                    //* update the marker's position with animation
                     const nextPosition = new google.maps.LatLng(
                         position.lat,
                         position.lng
                     );
-                    this.animateMarker(labelOverlay.marker, nextPosition, 2000); // Animate over 2 seconds
+                    this.animateMarker(labelOverlay.marker, nextPosition, 2000);
                 }
             }
         } catch (error) {

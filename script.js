@@ -14,7 +14,6 @@ let customPolyline;
 let followBus = false;
 const twoSeconds = 2000;
 const oneMinute = 60000;
-
 const locationSetter = new LocationSetter();
 const LabelOverlay = defineLabelOverlay();
 const busData = {};
@@ -76,13 +75,17 @@ export async function initMap() {
         dataFetcher.setShouldFollowBus(event.target.checked);
     });
 
-    document.getElementById('showBusCheckbox').addEventListener('change', function() {
-        dataFetcher.setShowBusMarkers(this.checked);
-    });
+    document
+        .getElementById("showBusCheckbox")
+        .addEventListener("change", function () {
+            dataFetcher.setShowBusMarkers(this.checked);
+        });
 
-    document.getElementById('showBicycleCheckbox').addEventListener('change', function() {
-        dataFetcher.setShowBikeMarkers(this.checked);
-    });
+    document
+        .getElementById("showBicycleCheckbox")
+        .addEventListener("change", function () {
+            dataFetcher.setShowBikeMarkers(this.checked);
+        });
 
     directionsService = new google.maps.DirectionsService();
     directionsRenderer = new google.maps.DirectionsRenderer();
@@ -231,8 +234,6 @@ function drawCustomPolyline(response, isWalkingRoute) {
     polyline.setMap(map);
     return polyline;
 }
-
-
 
 function createBusIconWithNumber(number) {
     return new Promise((resolve, reject) => {
