@@ -24,7 +24,7 @@ export default class DataFetcher {
     setShowBusMarkers(visible) {
         this.showBusMarkers = visible;
         //* Loop through all bus markers and set their visibility
-        Object.values(this.busMarkers).forEach(marker => {
+        Object.values(this.busMarkers).forEach((marker) => {
             marker.setVisible(this.showBusMarkers);
         });
     }
@@ -32,8 +32,29 @@ export default class DataFetcher {
     setShowBikeMarkers(visible) {
         this.showBikeMarkers = visible;
         //* Loop through all bike station markers and set their visibility
-        Object.values(this.bikeMarkers).forEach(marker => {
+        Object.values(this.bikeMarkers).forEach((marker) => {
             marker.setVisible(this.showBikeMarkers);
+        });
+    }
+
+    animateMarker(marker, toPosition, duration) {
+        const start = performance.now();
+        const fromPosition = marker.getPosition();
+        const latDelta = toPosition.lat() - fromPosition.lat();
+        const lngDelta = toPosition.lng() - fromPosition.lng();
+
+        requestAnimationFrame(function animate(now) {
+            const elapsed = now - start;
+            const t = elapsed / duration;
+
+            if (t > 1) {
+                marker.setPosition(toPosition);
+            } else {
+                const lat = fromPosition.lat() + t * latDelta;
+                const lng = fromPosition.lng() + t * lngDelta;
+                marker.setPosition(new google.maps.LatLng(lat, lng));
+                requestAnimationFrame(animate);
+            }
         });
     }
 
@@ -47,7 +68,9 @@ export default class DataFetcher {
             const response = await fetch(apiUrl);
 
             if (!response.ok) {
-                throw new Error(`API request failed with status ${response.status}`);
+                throw new Error(
+                    `API request failed with status ${response.status}`
+                );
             }
 
             //* Process and display the bus locations on the map
@@ -65,10 +88,10 @@ export default class DataFetcher {
                     const infoWindow = new google.maps.InfoWindow({
                         //* converting the bus speed from m/s to km/h
                         content: `
-                            <strong>Linja: ${bus.trip.routeId}</strong><br>
-                            Reitti: ${bus.vehicle.label}<br>
-                            Nopeus: ${(bus.position.speed * 3.6).toFixed(2)} km/h.
-                        `,
+                    <strong>Linja: ${bus.trip.routeId}</strong><br>
+                    Reitti: ${bus.vehicle.label}<br>
+                    Nopeus: ${(bus.position.speed * 3.6).toFixed(2)} km/h.
+                `,
                     });
 
                     const routeId = busEntity.vehicle.trip.routeId;
@@ -81,7 +104,9 @@ export default class DataFetcher {
                         () => {
                             if (this.shouldFollowBus) {
                                 if (this.followedBusId !== null) {
-                                    this.busData[this.followedBusId].labelOverlay.isFollowed = false;
+                                    this.busData[
+                                        this.followedBusId
+                                    ].labelOverlay.isFollowed = false;
                                 }
                                 this.followedBusId = busId;
                                 labelOverlay.isFollowed = true;
@@ -102,25 +127,31 @@ export default class DataFetcher {
                     const infoWindow = this.busData[busId].infoWindow;
                     infoWindow.setContent(
                         `
-                        <div class="card">
-                            <strong>Linja: ${bus.trip.routeId}</strong><br>
-                            Reitti: ${bus.vehicle.label}<br>
-                            Nopeus: ${(bus.position.speed * 3.6).toFixed(2)} km/h.
-                            <p><a href='https://vilkku.kuopio.fi/' target='_blank'>Osta lippu</a></p>
-                        </div>
+                            <div class="card">
+                                <strong>Linja: ${bus.trip.routeId}</strong><br>
+                                Reitti: ${bus.vehicle.label}<br>
+                                Nopeus: ${(bus.position.speed * 3.6).toFixed(2)} km/h.
+                                <p><a href='https://vilkku.kuopio.fi/' target='_blank'>Osta lippu</a></p>
+                            </div>
                         `
                     );
 
                     const labelOverlay = this.busData[busId].labelOverlay;
-                    labelOverlay.updatePosition(position);
+
+                    //* Set the marker visibility based on the showBusMarkers flag
+                    labelOverlay.marker.setVisible(this.showBusMarkers);
 
                     //* Update the map center if the current bus is being followed
                     if (labelOverlay.isFollowed) {
                         this.map.setCenter(position);
                     }
 
-                    //* Set the marker visibility based on the showBusMarkers flag
-                    labelOverlay.marker.setVisible(this.showBusMarkers);
+                    // Update the marker's position with animation
+                    const nextPosition = new google.maps.LatLng(
+                        position.lat,
+                        position.lng
+                    );
+                    this.animateMarker(labelOverlay.marker, nextPosition, 2000); // Animate over 2 seconds
                 }
             }
         } catch (error) {
@@ -232,15 +263,21 @@ export default class DataFetcher {
                         this.bikeMarkers[station.station_id] = marker;
 
                         let bikeInfo = "";
-                            if (bikesAtStation[station.station_id]) {
-                                for (const bike of bikesAtStation[station.station_id]) {
-                                    let fuelPercent = (bike.current_fuel_percent * 100).toFixed(0);
-                                    let rangeKm = (bike.current_range_meters / 1000).toFixed(2);
-                                    if (isNaN(fuelPercent)) fuelPercent = "N/A";
-                                    if (isNaN(rangeKm)) rangeKm = "N/A";
-                                    bikeInfo += `<p>Freebike ${bike.bike_id}: Virtaa ${fuelPercent}%, ${rangeKm} km</p>`;
-                                }
+                        if (bikesAtStation[station.station_id]) {
+                            for (const bike of bikesAtStation[
+                                station.station_id
+                            ]) {
+                                let fuelPercent = (
+                                    bike.current_fuel_percent * 100
+                                ).toFixed(0);
+                                let rangeKm = (
+                                    bike.current_range_meters / 1000
+                                ).toFixed(2);
+                                if (isNaN(fuelPercent)) fuelPercent = "N/A";
+                                if (isNaN(rangeKm)) rangeKm = "N/A";
+                                bikeInfo += `<p>Freebike ${bike.bike_id}: Virtaa ${fuelPercent}%, ${rangeKm} km</p>`;
                             }
+                        }
 
                         const infoWindow = new google.maps.InfoWindow({
                             content: `
