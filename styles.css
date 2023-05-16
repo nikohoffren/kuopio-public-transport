@@ -137,6 +137,16 @@ button:hover {
     background-color: #498ded;
 }
 
+#stopInfoButton {
+    border: none;
+    background-color: #4c7af7;
+    color: white;
+    cursor: pointer;
+    font-weight: bold;
+    text-decoration: none;
+    transition: background-color 0.3s;
+}
+
 #toggleBusInfo {
     padding: 0.2rem 0.4rem;
     height: 25px;
