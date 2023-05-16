@@ -12,6 +12,8 @@ let startInput;
 let endInput;
 let customPolyline;
 let followBus = false;
+const twoSeconds = 2000;
+const oneMinute = 60000;
 
 const locationSetter = new LocationSetter();
 const LabelOverlay = defineLabelOverlay();
@@ -48,25 +50,25 @@ export async function initMap() {
 
     function updateBikeLocations() {
         dataFetcher.fetchAndDisplayFreeBikeLocations().then(() => {
-            setTimeout(updateBikeLocations, 60000);
+            setTimeout(updateBikeLocations, oneMinute);
         });
     }
 
     function updateBusPositions() {
         dataFetcher.fetchAndDisplayBusLocations().then(() => {
-            setTimeout(updateBusPositions, 2000);
+            setTimeout(updateBusPositions, twoSeconds);
         });
     }
 
     function updateServiceAlerts() {
         dataFetcher.fetchAndDisplayServiceAlerts().then(() => {
-            setTimeout(updateServiceAlerts, 60000);
+            setTimeout(updateServiceAlerts, oneMinute);
         });
     }
 
     function updateTripUpdates() {
         dataFetcher.fetchAndDisplayTripUpdates().then(() => {
-            setTimeout(updateTripUpdates, 60000);
+            setTimeout(updateTripUpdates, oneMinute);
         });
     }
 
