@@ -10,6 +10,7 @@ export default class DataFetcher {
         this.showBikeMarkers = true;
         this.busMarkers = {};
         this.bikeMarkers = {};
+        this.twoSeconds = 2000;
     }
 
     setShouldFollowBus(newValue) {
@@ -153,7 +154,7 @@ export default class DataFetcher {
                         position.lat,
                         position.lng
                     );
-                    this.animateMarker(labelOverlay.marker, nextPosition, 2000);
+                    this.animateMarker(labelOverlay.marker, nextPosition, this.twoSeconds);
                 }
             }
         } catch (error) {

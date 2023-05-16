@@ -12,7 +12,10 @@ let startInput;
 let endInput;
 let customPolyline;
 let followBus = false;
+const oneSecond = 1000;
 const twoSeconds = 2000;
+const threeSeconds = 3000;
+const fourSeconds = 4000;
 const oneMinute = 60000;
 const locationSetter = new LocationSetter();
 const LabelOverlay = defineLabelOverlay();
@@ -92,7 +95,6 @@ export async function initMap() {
     directionsRenderer.setMap(map);
     directionsRenderer.setOptions({ suppressPolylines: true });
 
-    //* create markers
     const markers = [
         [
             `
