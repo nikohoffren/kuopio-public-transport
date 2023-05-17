@@ -74,8 +74,8 @@ export async function initMap() {
         });
     }
 
-    followBusCheckbox.addEventListener("change", (event) => {
-        dataFetcher.setShouldFollowBus(event.target.checked);
+    followBusCheckbox.addEventListener("change", (e) => {
+        dataFetcher.setShouldFollowBus(e.target.checked);
     });
 
     document
@@ -184,8 +184,8 @@ export async function initMap() {
 
 document
     .getElementById("followBusCheckbox")
-    .addEventListener("change", (event) => {
-        followBus = event.target.checked;
+    .addEventListener("change", (e) => {
+        followBus = e.target.checked;
     });
 
 function updatePolylineOptions(isWalkingRoute) {
