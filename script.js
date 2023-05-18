@@ -108,6 +108,42 @@ export async function initMap() {
             40,
             40,
         ],
+        [
+            `
+            <div class="card">
+                <strong>Kuopion Lentoasema</strong><br><a href="https://www.finavia.fi/fi/lentoasemat/kuopio" target="_blank">www.finavia.fi</a>
+            </div>
+            `,
+            63.00887481099206,
+            27.788803483575855,
+            "img/airplane.png",
+            30,
+            30,
+        ],
+        [
+            `
+            <div class="card">
+                <strong>Kuopion rautatieasema</strong><br><a href="https://www.vr.fi/" target="_blank">www.vr.fi</a>
+            </div>
+            `,
+            62.897411139025785,
+            27.683526083395748,
+            "img/train.png",
+            35,
+            35,
+        ],
+        [
+            `
+            <div class="card">
+                <strong>Kuopion matkakeskus</strong><br><a href="https://reittiopas.matkahuolto.fi/pysakit/Matkahuolto%3A4591/linjat" target="_blank">www.matkahuolto.fi</a>
+            </div>
+            `,
+            62.89810068343331,
+            27.678796806669176,
+            "img/bus-stop-icon.png",
+            30,
+            30,
+        ],
     ];
 
     for (let currMarker of markers) {
