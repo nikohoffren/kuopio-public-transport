@@ -4,8 +4,8 @@
     --bg-color-purple: #564095;
     --ft-color-white: rgb(237, 235, 235);
     --ft-color-black: rgb(12, 12, 12);
-    --ft-primary: 'Cuprum', sans-serif;
-    --ft-secondary: 'Montserrat', sans-serif;
+    --ft-primary: "Cuprum", sans-serif;
+    --ft-secondary: "Montserrat", sans-serif;
 }
 
 * {
@@ -44,7 +44,7 @@ header {
 }
 
 a > #vilkku-logo {
-    height: 90%;
+    height: 40%;
 }
 
 @media (max-width: 650px) {
@@ -90,6 +90,10 @@ h1 {
 
 #extraOptionsContainer {
     display: none;
+}
+
+#alertsContainer {
+    display: block;
 }
 
 .card {
@@ -166,6 +170,11 @@ button:hover {
     background-color: #2a60f5;
 }
 
+#alertsContainerButton {
+    background-color: yellow;
+    color: black;
+}
+
 #useCurrentLocation {
     background-color: red;
 }
@@ -197,22 +206,22 @@ button:hover {
 }
 
 @media (max-width: 800px) {
-  .gm-style > div:first-child > div:nth-child(2) {
-    margin-bottom: 40px !important;
-  }
+    .gm-style > div:first-child > div:nth-child(2) {
+        margin-bottom: 40px !important;
+    }
 }
 
 @keyframes blinking {
     0% {
-      opacity: 1;
+        opacity: 1;
     }
     50% {
-      opacity: 0.2;
+        opacity: 0.2;
     }
     100% {
-      opacity: 1;
+        opacity: 1;
     }
-  }
+}
 
 .blinking {
     animation: blinking 1.5s linear infinite;
@@ -220,4 +229,9 @@ button:hover {
 
 .checkboxes {
     width: 20rem;
+}
+
+.alert {
+    margin-bottom: 0.5rem;
+    color: white;
 }

@@ -1,66 +1,129 @@
 <!DOCTYPE html>
 <html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta http-equiv="X-UA-Compatible" content="IE=edge">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta property="og:title" content="Kuopio Public Transport">
-    <meta property="og:description" content="Find all the busses/bus routes, Vilkku-bicycles and Biketaxis in Kuopio/Siilinjärvi region">
-    <meta property="og:image" content="img/vilkku.jpg">
-    <title>Kuopio Public Transport</title>
-    <link rel="stylesheet" href="styles.css">
-    <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+    <head>
+        <meta charset="UTF-8" />
+        <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <meta property="og:title" content="Kuopio Public Transport" />
+        <meta
+            property="og:description"
+            content="Find all the busses/bus routes, Vilkku-bicycles and Biketaxis in Kuopio/Siilinjärvi region"
+        />
+        <meta property="og:image" content="img/vilkku.jpg" />
+        <title>Kuopio Public Transport</title>
+        <link rel="stylesheet" href="styles.css" />
+        <link
+            href="https://fonts.googleapis.com/icon?family=Material+Icons"
+            rel="stylesheet"
+        />
 
-    <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png">
-    <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png">
-    <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png">
-    <link rel="manifest" href="/site.webmanifest">
-    <link rel="mask-icon" href="/safari-pinned-tab.svg" color="#5bbad5">
-    <meta name="msapplication-TileColor" content="#da532c">
-    <meta name="theme-color" content="#ffffff">
-</head>
+        <link
+            rel="apple-touch-icon"
+            sizes="180x180"
+            href="/apple-touch-icon.png"
+        />
+        <link
+            rel="icon"
+            type="image/png"
+            sizes="32x32"
+            href="/favicon-32x32.png"
+        />
+        <link
+            rel="icon"
+            type="image/png"
+            sizes="16x16"
+            href="/favicon-16x16.png"
+        />
+        <link rel="manifest" href="/site.webmanifest" />
+        <link rel="mask-icon" href="/safari-pinned-tab.svg" color="#5bbad5" />
+        <meta name="msapplication-TileColor" content="#da532c" />
+        <meta name="theme-color" content="#ffffff" />
+    </head>
 
-<body>
-    <header>
-        <div class="input-container">
-            <a href="https://vilkku.kuopio.fi/" target="_blank">
-                <img src="img/vilkku.jpg" alt="Vilkku logo" id="vilkku-logo">
-            </a>
-            <input id="start" type="text" placeholder="Mistä? - Katuosoite tai paikka" />
-            <input id="end" type="text" placeholder="Minne? - Katuosoite tai paikka" />
-            <button id="routeBtn" onclick="onButtonClick()">Hae reittejä</button>
-            <button id="useCurrentLocation"><i class="material-icons">edit_location</i></button>
-
-            <button id="extraOptionsButton">Valikko</button>
-            <div id="extraOptionsContainer">
-                <button id="stopInfo">
-                    <a href="https://pysakit.kuopio.fi/" id="stopInfoButton" target="_blank">
-                        Pysäkkitiedot
-                    </a>
+    <body>
+        <header>
+            <div class="input-container">
+                <input
+                    id="start"
+                    type="text"
+                    placeholder="Mistä? - Katuosoite tai paikka"
+                />
+                <input
+                    id="end"
+                    type="text"
+                    placeholder="Minne? - Katuosoite tai paikka"
+                />
+                <button id="routeBtn" onclick="onButtonClick()">
+                    Hae reittejä
                 </button>
-                <div class="checkboxes">
-                    <input type="checkbox" id="followBusCheckbox" name="followBusCheckbox">
-                    <label for="followBusCheckbox" class="white-text">Seuraa bussia</label>
-                    <input type="checkbox" id="showBusCheckbox" name="showBusCheckbox" checked>
-                    <label for="showBusCheckbox" class="white-text">Bussit</label>
-                    <input type="checkbox" id="showBicycleCheckbox" name="showBicycleCheckbox" checked>
-                    <label for="showBicycleCheckbox" class="white-text">Pyörät</label>
+                <button id="useCurrentLocation">
+                    <i class="material-icons">edit_location</i>
+                </button>
+                <button id="alertsContainerButton">Tiedotteet</button>
+                <div id="alertsContainer">
+                    <div id="alertsContainerInfo"></div>
+                </div>
+                <button id="extraOptionsButton">Valikko</button>
+                <div id="extraOptionsContainer">
+                    <a href="https://vilkku.kuopio.fi/" target="_blank">
+                        <img
+                            src="img/vilkku.jpg"
+                            alt="Vilkku logo"
+                            id="vilkku-logo"
+                        />
+                    </a>
+                    <button id="stopInfo">
+                        <a
+                            href="https://pysakit.kuopio.fi/"
+                            id="stopInfoButton"
+                            target="_blank"
+                        >
+                            Pysäkkitiedot
+                        </a>
+                    </button>
+                    <div class="checkboxes">
+                        <input
+                            type="checkbox"
+                            id="followBusCheckbox"
+                            name="followBusCheckbox"
+                        />
+                        <label for="followBusCheckbox" class="white-text"
+                            >Seuraa bussia</label
+                        >
+                        <input
+                            type="checkbox"
+                            id="showBusCheckbox"
+                            name="showBusCheckbox"
+                            checked
+                        />
+                        <label for="showBusCheckbox" class="white-text"
+                            >Bussit</label
+                        >
+                        <input
+                            type="checkbox"
+                            id="showBicycleCheckbox"
+                            name="showBicycleCheckbox"
+                            checked
+                        />
+                        <label for="showBicycleCheckbox" class="white-text"
+                            >Pyörät</label
+                        >
+                    </div>
+                    <br />
                 </div>
             </div>
+        </header>
+
+        <div id="busInfo">
+            <button id="toggleBusInfo">
+                <!-- <i class="tiny material-icons">dehaze</i> -->
+                Näytä/piilota
+            </button>
+            <div id="busInfoContent"></div>
         </div>
-    </header>
 
-    <div id="busInfo">
-        <button id="toggleBusInfo">
-            <!-- <i class="tiny material-icons">dehaze</i> -->
-            Näytä/piilota
-        </button>
-        <div id="busInfoContent"></div>
-    </div>
+        <div id="map"></div>
 
-    <div id="map"></div>
-
-    <script type="module" src="script.js"></script>
-</body>
+        <script type="module" src="script.js"></script>
+    </body>
 </html>
-

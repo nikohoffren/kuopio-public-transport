@@ -17,6 +17,7 @@ const twoSeconds = 2000;
 const threeSeconds = 3000;
 const fourSeconds = 4000;
 const oneMinute = 60000;
+const oneHour = 3600000;
 const locationSetter = new LocationSetter();
 const LabelOverlay = defineLabelOverlay();
 const busData = {};
@@ -64,7 +65,7 @@ export async function initMap() {
 
     function updateServiceAlerts() {
         dataFetcher.fetchAndDisplayServiceAlerts().then(() => {
-            setTimeout(updateServiceAlerts, oneMinute);
+            setTimeout(updateServiceAlerts, oneHour);
         });
     }
 
@@ -671,7 +672,9 @@ window.addEventListener("resize", () => {
     });
 });
 
-document.querySelector("#extraOptionsButton").addEventListener("click", () => {
+document
+    .querySelector("#extraOptionsButton")
+    .addEventListener("click", () => {
     const extraOptionsContainer = document.querySelector(
         "#extraOptionsContainer"
     );
@@ -681,6 +684,17 @@ document.querySelector("#extraOptionsButton").addEventListener("click", () => {
         extraOptionsContainer.style.display = "none";
     }
 });
+
+document
+    .querySelector("#alertsContainerButton")
+    .addEventListener("click", () => {
+        const alertsContainer = document.querySelector("#alertsContainer");
+        if (alertsContainer.style.display === "none") {
+            alertsContainer.style.display = "block";
+        } else {
+            alertsContainer.style.display = "none";
+        }
+    });
 
 document
     .querySelector("#useCurrentLocation")
