@@ -672,9 +672,7 @@ window.addEventListener("resize", () => {
     });
 });
 
-document
-    .querySelector("#extraOptionsButton")
-    .addEventListener("click", () => {
+document.querySelector("#extraOptionsButton").addEventListener("click", () => {
     const extraOptionsContainer = document.querySelector(
         "#extraOptionsContainer"
     );

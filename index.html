@@ -56,22 +56,26 @@
                 <button id="routeBtn" onclick="onButtonClick()">
                     Hae reittejä
                 </button>
-                <button id="useCurrentLocation">
-                    <i class="material-icons">edit_location</i>
-                </button>
-                <button id="alertsContainerButton">Tiedotteet</button>
+                <div class="extraButtonsContainer">
+                    <button id="useCurrentLocation">
+                        <i class="material-icons">edit_location</i>
+                    </button>
+                    <button id="alertsContainerButton">Tiedotteet</button>
+                    <button id="extraOptionsButton">Valikko</button>
+                </div>
                 <div id="alertsContainer">
                     <div id="alertsContainerInfo"></div>
                 </div>
-                <button id="extraOptionsButton">Valikko</button>
                 <div id="extraOptionsContainer">
-                    <a href="https://vilkku.kuopio.fi/" target="_blank">
-                        <img
-                            src="img/vilkku.jpg"
-                            alt="Vilkku logo"
-                            id="vilkku-logo"
-                        />
-                    </a>
+                    <button id="stopInfo">
+                        <a
+                            href="https://vilkku.kuopio.fi/"
+                            target="_blank"
+                            id="stopInfoButton"
+                        >
+                            Osta bussilippu
+                        </a>
+                    </button>
                     <button id="stopInfo">
                         <a
                             href="https://pysakit.kuopio.fi/"
@@ -79,6 +83,15 @@
                             target="_blank"
                         >
                             Pysäkkitiedot
+                        </a>
+                    </button>
+                    <button id="stopInfo">
+                        <a
+                            href="https://taksi1.fi/"
+                            id="stopInfoButton"
+                            target="_blank"
+                        >
+                            Taksiykköset
                         </a>
                     </button>
                     <div class="checkboxes">

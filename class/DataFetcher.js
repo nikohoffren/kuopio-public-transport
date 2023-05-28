@@ -167,13 +167,15 @@ export default class DataFetcher {
     }
 
     displayAlert(alert) {
-        const alertsContainerInfo = document.querySelector('#alertsContainerInfo');
+        const alertsContainerInfo = document.querySelector(
+            "#alertsContainerInfo"
+        );
 
-        const alertElement = document.createElement('div');
-        alertElement.classList.add('alert');
+        const alertElement = document.createElement("div");
+        alertElement.classList.add("alert");
 
         for (const translation of alert.descriptionText.translation) {
-            const languageElement = document.createElement('p');
+            const languageElement = document.createElement("p");
 
             // You can also add the language of the alert if needed
             // languageElement.textContent = `${translation.language}: ${translation.text}`;
@@ -202,11 +204,24 @@ export default class DataFetcher {
 
             //* Process and display the service alerts
             const data = await response.json();
-            // console.log("Service alerts:", data);
+            console.log("Service alerts:", data);
 
-            //* Add alerts to the page
-            for (const alertEntity of data.entity) {
-                this.displayAlert(alertEntity.alert);
+            const alertsContainerButton = document.querySelector(
+                "#alertsContainerButton"
+            );
+
+            //* Check if there are alerts
+            if (data.entity.length > 0) {
+                //* Show the button
+                alertsContainerButton.style.display = "block";
+
+                //* Add alerts to the page
+                for (const alertEntity of data.entity) {
+                    this.displayAlert(alertEntity.alert);
+                }
+            } else {
+                //* Hide the button
+                alertsContainerButton.style.display = "none";
             }
         } catch (error) {
             console.error("Error fetching service alerts:", error);

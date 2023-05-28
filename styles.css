@@ -88,6 +88,18 @@ h1 {
     width: 20rem;
 }
 
+.extraButtonsContainer {
+    display: flex;
+    justify-content: space-between; /* spreads the buttons out evenly across the width */
+    width: 100%; /* ensures the container spans the full width of the parent container */
+}
+
+#useCurrentLocation, #alertsContainerButton, #extraOptionsButton {
+    flex-grow: 1;
+    text-align: center;
+    margin: 0 5px;
+}
+
 #extraOptionsContainer {
     display: none;
 }
@@ -159,6 +171,7 @@ button:hover {
 
 #stopInfo {
     width: 20rem;
+    margin-bottom: 0.5rem;
 }
 
 #toggleBusInfo {
@@ -171,6 +184,7 @@ button:hover {
 }
 
 #alertsContainerButton {
+    display: none;
     background-color: yellow;
     color: black;
 }
