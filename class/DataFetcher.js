@@ -154,7 +154,11 @@ export default class DataFetcher {
                         position.lat,
                         position.lng
                     );
-                    this.animateMarker(labelOverlay.marker, nextPosition, this.twoSeconds);
+                    this.animateMarker(
+                        labelOverlay.marker,
+                        nextPosition,
+                        this.twoSeconds
+                    );
                 }
             }
         } catch (error) {

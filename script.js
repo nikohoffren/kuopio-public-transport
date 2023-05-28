@@ -218,11 +218,9 @@ export async function initMap() {
     updateTripUpdates();
 }
 
-document
-    .getElementById("followBusCheckbox")
-    .addEventListener("change", (e) => {
-        followBus = e.target.checked;
-    });
+document.getElementById("followBusCheckbox").addEventListener("change", (e) => {
+    followBus = e.target.checked;
+});
 
 function updatePolylineOptions(isWalkingRoute) {
     directionsRenderer.setOptions({
@@ -671,6 +669,17 @@ window.addEventListener("resize", () => {
                 : google.maps.ControlPosition.RIGHT_TOP,
         },
     });
+});
+
+document.querySelector("#extraOptionsButton").addEventListener("click", () => {
+    const extraOptionsContainer = document.querySelector(
+        "#extraOptionsContainer"
+    );
+    if (extraOptionsContainer.style.display === "none") {
+        extraOptionsContainer.style.display = "block";
+    } else {
+        extraOptionsContainer.style.display = "none";
+    }
 });
 
 document

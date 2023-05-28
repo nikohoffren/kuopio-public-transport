@@ -83,7 +83,13 @@ h1 {
 
 .input-container {
     display: flex;
+    flex-direction: column;
     gap: 0.5rem;
+    width: 20rem;
+}
+
+#extraOptionsContainer {
+    display: none;
 }
 
 .card {
@@ -117,7 +123,7 @@ input[type="text"] {
     padding: 0.5rem;
     border-radius: 5px;
     border: 1px solid #ccc;
-    width: 200px;
+    width: 20rem;
     height: 40px;
 }
 
@@ -145,6 +151,10 @@ button:hover {
     font-weight: bold;
     text-decoration: none;
     transition: background-color 0.3s;
+}
+
+#stopInfo {
+    width: 20rem;
 }
 
 #toggleBusInfo {
@@ -209,5 +219,5 @@ button:hover {
 }
 
 .checkboxes {
-    width: 8.5em;
+    width: 20rem;
 }
