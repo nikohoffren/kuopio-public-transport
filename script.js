@@ -674,14 +674,13 @@ window.addEventListener("resize", () => {
 
 document.querySelector("#extraOptionsButton").addEventListener("click", () => {
     const extraOptionsContainer = document.querySelector("#extraOptionsContainer");
+    extraOptionsContainer.classList.toggle('slideDown');
 
-    if (extraOptionsContainer.style.display === "none") {
+    if (extraOptionsContainer.classList.contains('slideDown')) {
         extraOptionsContainer.style.display = "block";
     } else {
         extraOptionsContainer.style.display = "none";
     }
-
-    extraOptionsContainer.classList.toggle('slideDown');
 });
 
 document
