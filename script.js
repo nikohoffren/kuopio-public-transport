@@ -489,7 +489,7 @@ function displayRouteInfo(response, isBusRoute, polyline) {
                         step.transit.departure_time.real_value;
 
                     routeInfoHTML += `<p>
-                        Linja: ${lineName}<br>
+                        <strong>Linja: ${lineName}</strong><br>
                         Lähtöaika: ${departureTime}<br>
                         Saapumisaika: ${arrivalTime}<br>
                         Matka-aika: ${step.duration.text}<br>
@@ -691,6 +691,17 @@ document
             alertsContainer.style.display = "block";
         } else {
             alertsContainer.style.display = "none";
+        }
+    });
+
+document
+    .querySelector("#siteInfoContainerButton")
+    .addEventListener("click", () => {
+        const siteInfoContainer = document.querySelector("#siteInfoContainer");
+        if (siteInfoContainer.style.display === "none") {
+            siteInfoContainer.style.display = "block";
+        } else {
+            siteInfoContainer.style.display = "none";
         }
     });
 

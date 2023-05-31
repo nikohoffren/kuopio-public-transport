@@ -177,7 +177,6 @@ export default class DataFetcher {
         for (const translation of alert.descriptionText.translation) {
             const languageElement = document.createElement("p");
 
-            // You can also add the language of the alert if needed
             // languageElement.textContent = `${translation.language}: ${translation.text}`;
             languageElement.textContent = translation.text;
 
@@ -321,7 +320,7 @@ export default class DataFetcher {
                                 ).toFixed(2);
                                 if (isNaN(fuelPercent)) fuelPercent = "N/A";
                                 if (isNaN(rangeKm)) rangeKm = "N/A";
-                                bikeInfo += `<p>Freebike ${bike.bike_id}: Virtaa ${fuelPercent}%, ${rangeKm} km</p>`;
+                                bikeInfo += `<p>Freebike ${bike.bike_id}: Akku: ${fuelPercent}%</p>`;
                             }
                         }
 
