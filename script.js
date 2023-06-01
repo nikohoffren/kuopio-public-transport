@@ -673,10 +673,12 @@ window.addEventListener("resize", () => {
 });
 
 document.querySelector("#extraOptionsButton").addEventListener("click", () => {
-    const extraOptionsContainer = document.querySelector("#extraOptionsContainer");
-    extraOptionsContainer.classList.toggle('slideDown');
+    const extraOptionsContainer = document.querySelector(
+        "#extraOptionsContainer"
+    );
+    extraOptionsContainer.classList.toggle("slideDown");
 
-    if (extraOptionsContainer.classList.contains('slideDown')) {
+    if (extraOptionsContainer.classList.contains("slideDown")) {
         extraOptionsContainer.style.display = "block";
     } else {
         extraOptionsContainer.style.display = "none";

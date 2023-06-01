@@ -293,6 +293,7 @@ button:hover {
 
 .checkboxes {
     width: 20rem;
+    padding-top: 0.4rem;
 }
 
 .alert {
@@ -314,5 +315,11 @@ button:hover {
 
     #alertsContainer {
         display: none;
+    }
+
+    #busInfo {
+        top: 10rem;
+        font-size: 0.8em;
+        right: 0;
     }
 }
