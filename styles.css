@@ -140,6 +140,10 @@ h1 {
     overflow-y: auto;
 }
 
+.freebike-img {
+    width: 50px;
+}
+
 .card {
     gap: 0.5rem;
     background-color: var(--bg-color-purple);
@@ -294,4 +298,21 @@ button:hover {
 .alert {
     margin-bottom: 0.5rem;
     color: white;
+}
+
+@media (max-width: 650px) {
+    button {
+        height: 32px;
+        padding: 0.4rem 0.8rem;
+        font-size: 0.8em;
+    }
+
+    input[type="text"] {
+        height: 25px;
+        font-size: 0.8em;
+    }
+
+    #alertsContainer {
+        display: none;
+    }
 }

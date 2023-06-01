@@ -320,7 +320,11 @@ export default class DataFetcher {
                                 ).toFixed(2);
                                 if (isNaN(fuelPercent)) fuelPercent = "N/A";
                                 if (isNaN(rangeKm)) rangeKm = "N/A";
-                                bikeInfo += `<p>Freebike ${bike.bike_id}: Akku: ${fuelPercent}%</p>`;
+                                bikeInfo += `
+                                    <div style="display: flex; align-items: center;">
+                                        <img src="img/freebike-img.jpg" alt="Freebike image" class="freebike-img">
+                                        <p style="margin-left: 10px;">Freebike ${bike.bike_id}: Akku: ${fuelPercent}%</p>
+                                    </div>`;
                             }
                         }
 
