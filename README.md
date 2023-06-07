@@ -1,6 +1,6 @@
-# Kuopion Julkinen Liikenne
+# Kuopion Julkinen Liikenne (Kuopio Public Transport)
 
-This project is designed to facilitate access to information about public transportation in the Kuopion region. Users can find all the busses/bus routes, Vilkku-bicycles, and Biketaxis in Kuopio/Siilinjärvi region.
+This project is designed to facilitate access to information about public transportation around Kuopio and Siilinjärvi region. Users can find all the busses, speed and route of each individual bus, bus/walking routes, Vilkku-bicycle stations, how many bikes are there per station and the battery life of each bike and also Biketaxi information.
 
 ## Table of Contents
 
@@ -17,8 +17,8 @@ This project is designed to facilitate access to information about public transp
 Clone this repository and then use npm to install dependencies.
 
 ```bash
-git clone https://github.com/yourusername/your-repo.git
-cd your-repo
+git clone https://github.com/nikohoffren/kuopio-public-transport.git
+cd /kuopio-public-transport
 npm install
 ```
 
