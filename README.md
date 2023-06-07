@@ -59,19 +59,19 @@ After installing the Netlify CLI with npm install netlify-cli -g, use the netlif
 
 In order to use Google Maps in your application, you will need to get an API key and a MapId.
 
-    Go to the Google Cloud Platform Console here.
+1. Go to the Google Cloud Platform Console [here](https://console.cloud.google.com).
 
-    Click the project drop-down and select or create the project for which you want to add an API key.
+2. Click the project drop-down and select or create the project for which you want to add an API key.
 
-    Click the menu button and select "APIs & Services" > "Credentials".
+3. Click the menu button and select "APIs & Services" > "Credentials".
 
-    On the "Credentials" page, click "Create credentials" > "API key".
+4. On the "Credentials" page, click "Create credentials" > "API key".
 
-    After the API key is created, you will see your new API key on the "API key" page.
+5. After the API key is created, you will see your new API key on the "API key" page.
 
-    To find your MapId, navigate to the "Map Styles" page in the Google Cloud Console.
+6. To find your MapId, navigate to the "Map Styles" page in the Google Cloud Console.
 
-    Your MapId is listed on this page.
+7. Your MapId is listed on this page.
 
 Remember to store your Google Maps API Key and MapId in the .env file:
 
