@@ -3,13 +3,13 @@
 This project is designed to facilitate access to information about public transportation in the Kuopion region. Users can find all the busses/bus routes, Vilkku-bicycles, and Biketaxis in Kuopio/Siilinjärvi region.
 Table of Contents
 
-    Installation
-    Setting Up Netlify CLI and Functions
-    Handling CORS
-    Acquiring Google Maps API Key and MapId
-    Setting Up GTFS Data
-    Usage
-    Contribution
+    - Installation
+    - Setting Up Netlify CLI and Functions
+    - Handling CORS
+    - Acquiring Google Maps API Key and MapId
+    - Setting Up GTFS Data
+    - Usage
+    - Contribution
 
 ## Installation
 
