@@ -48,12 +48,11 @@ After installing the Netlify CLI with npm install netlify-cli -g, use the netlif
 
 ### To set up Netlify Functions:
 
-    Navigate to your site's settings on Netlify and find the "Functions" section.
+1. Navigate to your site's settings on Netlify and find the "Functions" section.
 
-    Set the "Functions Directory" to netlify/functions.
+2. Set the "Functions Directory" to netlify/functions.
 
-    Deploy your site to Netlify.
-
+3. Deploy your site to Netlify.
 
 ## Acquiring Google Maps API Key and MapId
 
