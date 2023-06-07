@@ -1,7 +1,8 @@
 # Kuopion Julkinen Liikenne
 
 This project is designed to facilitate access to information about public transportation in the Kuopion region. Users can find all the busses/bus routes, Vilkku-bicycles, and Biketaxis in Kuopio/Siilinjärvi region.
-Table of Contents
+
+## Table of Contents
 
 - Installation
 - Setting Up Netlify CLI and Functions
