@@ -32,31 +32,34 @@
   </head>
 
   <body>
-    <header>
+    <header class="flex flex-col items-center p-4 shadow-md absolute z-10 bg-gray-800 w-full sm:w-auto sm:top-4 sm:left-4 sm:rounded-lg">
+      <div class="flex flex-col gap-2 w-80">
       <div class="input-container">
         <input
           id="start"
           type="text"
+          class="p-2 rounded-md border border-gray-300 w-full my-1"
           placeholder="Mistä? - Katuosoite tai paikka"
         />
         <input
           id="end"
           type="text"
+          class="p-2 rounded-md border border-gray-300 w-full my-1"
           placeholder="Minne? - Katuosoite tai paikka"
         />
-        <button id="routeBtn" onclick="onButtonClick()">Hae reittejä</button>
-        <div class="extraButtonsContainer">
-          <button id="useCurrentLocation">
+        <button id="routeBtn" class="bg-green-500 border-2 border-white text-white px-4 py-2 rounded-md hover:bg-green-600 my-2 w-full" onclick="onButtonClick()">Hae reittejä</button>
+        <div class="flex justify-between w-full">
+          <button id="useCurrentLocation" class="bg-red-600 text-white p-2 rounded-md hover:bg-red-700 border-2">
             <i class="material-icons">edit_location</i>
           </button>
-          <button id="alertsContainerButton">Tiedotteet</button>
-          <button id="extraOptionsButton">Valikko</button>
+          <button id="alertsContainerButton" class="bg-blue-600 text-white p-2 rounded-md hover:bg-blue-700 w-full mx-2 border-2">Tiedotteet</button>
+          <button id="extraOptionsButton" class="bg-blue-600 text-white p-2 rounded-md hover:bg-blue-700 w-full border-2">Valikko</button>
         </div>
         <div id="alertsContainer">
           <div id="alertsContainerInfo"></div>
         </div>
-        <div id="extraOptionsContainer">
-          <button id="stopInfo">
+        <div id="extraOptionsContainer" class="hidden pt-4">
+          <button id="stopInfo" class="bg-blue-600 text-white rounded-md hover:bg-blue-700 p-2 mb-2 w-full">
             <a
               href="https://vilkku.kuopio.fi/"
               target="_blank"
@@ -65,7 +68,7 @@
               Osta bussilippu
             </a>
           </button>
-          <button id="stopInfo">
+          <button id="stopInfo" class="bg-blue-600 text-white p-2 rounded-md hover:bg-blue-700 w-full mb-2">
             <a
               href="https://pysakit.kuopio.fi/"
               id="stopInfoButton"
@@ -74,17 +77,13 @@
               Pysäkkitiedot
             </a>
           </button>
-          <button id="stopInfo">
+          <button id="stopInfo" class="bg-blue-600 text-white p-2 rounded-md hover:bg-blue-700 mb-2 w-full">
             <a href="https://taksi1.fi/" id="stopInfoButton" target="_blank">
               Taksiykköset
             </a>
           </button>
-          <a href="tietosuojaseloste">
-            <button id="privacyPolicy">Tietosuojaseloste</button>
-          </a>
-
-          <button id="siteInfoContainerButton">Ohjeet</button>
-          <div id="siteInfoContainer">
+          <button id="siteInfoContainerButton" class="bg-blue-800 text-white p-2 rounded-md hover:bg-blue-900 mb-4 w-full border-2">Ohjeet</button>
+          <div id="siteInfoContainer" class="text-white hidden">
             <br />
             <h3>Sivun ohjeet</h3>
             <br />
@@ -127,38 +126,40 @@
               id="followBusCheckbox"
               name="followBusCheckbox"
             />
-            <label for="followBusCheckbox" class="white-text"
+            <label for="followBusCheckbox" class="text-white"
               >Seuraa bussia</label
             >
             <input
               type="checkbox"
               id="showBusCheckbox"
               name="showBusCheckbox"
+              class="ml-2"
               checked
             />
-            <label for="showBusCheckbox" class="white-text">Bussit</label>
+            <label for="showBusCheckbox" class="text-white">Bussit</label>
             <input
               type="checkbox"
               id="showBicycleCheckbox"
               name="showBicycleCheckbox"
+              class="ml-2"
               checked
             />
-            <label for="showBicycleCheckbox" class="white-text">Pyörät</label>
+            <label for="showBicycleCheckbox" class="text-white">Pyörät</label>
           </div>
           <br />
         </div>
       </div>
     </header>
 
-    <div id="busInfo">
-      <button id="toggleBusInfo">
+    <div id="busInfo" class="absolute top-32 right-2 text-center bg-gray-800 rounded-lg shadow-md p-2 z-10">
+      <button id="toggleBusInfo" class="bg-blue-600 text-white p-2 rounded-md hover:bg-blue-700 w-full mt-2">
         <!-- <i class="tiny material-icons">dehaze</i> -->
         Näytä/piilota
       </button>
-      <div id="busInfoContent"></div>
+      <div id="busInfoContent" class="rounded-lg"></div>
     </div>
 
-    <div id="map"></div>
+    <div id="map" class="h-screen"></div>
 
     <script type="module" src="script.js"></script>
   </body>

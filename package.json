@@ -1,11 +1,13 @@
 {
   "name": "kuopio-public-transport-app",
-  "version": "1.0.0",
+  "version": "1.1.1",
   "description": "",
   "main": "index.js",
   "scripts": {
     "start": "node server.js",
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "build-css": "tailwindcss build tailwind.css -o styles.css",
+    "watch-css": "tailwindcss -i tailwind.css -o styles.css --watch"
   },
   "keywords": [],
   "author": "",
@@ -19,6 +21,7 @@
     "node-fetch": "^2.6.9",
     "path": "^0.12.7",
     "protobufjs": "^7.2.3",
-    "serverless-http": "^3.2.0"
+    "serverless-http": "^3.2.0",
+    "tailwindcss": "^3.3.5"
   }
 }

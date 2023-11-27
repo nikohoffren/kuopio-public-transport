@@ -1,0 +1,435 @@
+:root {
+  --bg-color-white: rgb(236, 235, 235);
+  --bg-color-black: rgb(12, 12, 12);
+  --bg-color-purple: #564095;
+  --ft-color-white: rgb(237, 235, 235);
+  --ft-color-black: rgb(12, 12, 12);
+  --ft-primary: "Cuprum", sans-serif;
+  --ft-secondary: "Montserrat", sans-serif;
+}
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  font-family: var(--ft-primary);
+  background: var(--bg-color-white);
+  color: var(--ft-color-black);
+  margin: 0;
+}
+
+header {
+  background-color: var(--bg-color-purple);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding-left: 0.8rem;
+  padding-right: 0.8rem;
+  padding-top: 0.7rem;
+  padding-bottom: 0.5rem;
+  position: absolute;
+  top: 1rem;
+  left: 1rem;
+  z-index: 1;
+  border-radius: 5px;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.3);
+}
+
+@keyframes slideDown {
+  0% {
+    height: 0;
+    visibility: hidden;
+  }
+  100% {
+    height: auto;
+    visibility: visible;
+  }
+}
+
+.slideDown {
+  animation: slideDown 1s smooth infinite;
+}
+
+#vilkku-logo {
+  width: 7rem;
+  border-radius: 5px;
+}
+
+a > #vilkku-logo {
+  height: 40%;
+}
+
+@media (max-width: 650px) {
+  header {
+    top: 0;
+    left: 0;
+    width: 100%;
+    border-radius: 0;
+  }
+}
+
+h1 {
+  font-size: 1.2rem;
+}
+
+.white-text {
+  color: white;
+}
+
+.link {
+  text-decoration: none;
+  height: 40px;
+  padding: 0.5rem 1rem;
+  border-radius: 5px;
+  border: none;
+  background-color: #4c7af7;
+  color: white;
+  cursor: pointer;
+  font-weight: bold;
+  transition: background-color 0.3s;
+}
+
+.link:hover {
+  background-color: #3a63d3;
+}
+
+.input-container {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  width: 20rem;
+}
+
+.extraButtonsContainer {
+  display: flex;
+  justify-content: space-between;
+  width: 100%;
+}
+
+#useCurrentLocation,
+#alertsContainerButton,
+#extraOptionsButton,
+#siteInfoContainerButton {
+  flex-grow: 1;
+  text-align: center;
+  margin: 0 5px;
+}
+
+#extraOptionsContainer {
+  display: none;
+  height: 0;
+  overflow: hidden;
+  animation: slideDown 0.2s forwards;
+}
+
+#alertsContainer {
+  display: block;
+  max-height: 20rem;
+  overflow-y: auto;
+}
+
+#siteInfoContainer {
+  display: none;
+  color: white;
+  max-height: 20rem;
+  overflow-y: auto;
+}
+
+.freebike-img {
+  width: 50px;
+}
+
+.card {
+  gap: 0.5rem;
+  background-color: var(--bg-color-purple);
+  color: white;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding-left: 0.8rem;
+  padding-right: 0.8rem;
+  padding-top: 0.7rem;
+  padding-bottom: 0.5rem;
+  top: 1rem;
+  left: 1rem;
+  border-radius: 5px;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.3);
+}
+
+.card a {
+  color: white;
+}
+
+@media (max-width: 800px) {
+  .input-container {
+    flex-wrap: wrap;
+  }
+}
+
+input[type="text"] {
+  padding: 0.5rem;
+  border-radius: 5px;
+  border: 1px solid #ccc;
+  width: 20rem;
+  height: 40px;
+}
+
+button {
+  height: 40px;
+  padding: 0.5rem 1rem;
+  border-radius: 5px;
+  border: none;
+  background-color: #4c7af7;
+  color: white;
+  cursor: pointer;
+  font-weight: bold;
+  transition: background-color 0.3s;
+}
+
+button:hover {
+  background-color: #498ded;
+}
+
+#stopInfoButton {
+  border: none;
+  background-color: #4c7af7;
+  color: white;
+  cursor: pointer;
+  font-weight: bold;
+  text-decoration: none;
+  transition: background-color 0.3s;
+}
+
+#siteInfoContainerButton {
+  border: none;
+  background-color: #35fc22;
+  color: white;
+  cursor: pointer;
+  font-weight: bold;
+  text-decoration: none;
+  transition: background-color 0.3s;
+}
+
+#siteInfoContainerButton:hover {
+  background-color: #74fd87;
+}
+
+#stopInfo {
+  width: 20rem;
+  margin-bottom: 0.5rem;
+}
+
+#toggleBusInfo {
+  padding: 0.2rem 0.4rem;
+  height: 25px;
+  background-color: rgb(0, 123, 255);
+}
+#toggleBusInfo:hover {
+  background-color: #2a60f5;
+}
+
+#alertsContainerButton {
+  display: none;
+  background-color: yellow;
+  color: black;
+}
+
+#useCurrentLocation {
+  background-color: red;
+}
+#useCurrentLocation:hover {
+  background-color: rgb(163, 0, 0);
+}
+
+#busInfoContent {
+  display: none;
+  border-radius: 5px;
+}
+
+#busInfo {
+  position: absolute;
+  top: 8rem;
+  right: 0.5rem;
+  text-align: center;
+  background-color: var(--bg-color-purple);
+  border-radius: 5px;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.3);
+  padding: 0.8rem;
+  padding-bottom: 0;
+  z-index: 1;
+  display: none;
+}
+
+#map {
+  height: 100vh;
+}
+
+@media (max-width: 800px) {
+  .gm-style > div:first-child > div:nth-child(2) {
+    margin-bottom: 40px !important;
+  }
+}
+
+@keyframes blinking {
+  0% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.2;
+  }
+  100% {
+    opacity: 1;
+  }
+}
+
+.blinking {
+  animation: blinking 1.5s linear infinite;
+}
+
+.checkboxes {
+  width: 20rem;
+  padding-top: 0.4rem;
+}
+
+.alert {
+  margin-bottom: 0.5rem;
+  color: white;
+}
+
+@media (max-width: 650px) {
+  button {
+    height: 32px;
+    padding: 0.4rem 0.8rem;
+    font-size: 0.8em;
+  }
+
+  input[type="text"] {
+    height: 25px;
+    font-size: 0.8em;
+  }
+
+  #alertsContainer {
+    display: none;
+  }
+
+  #busInfo {
+    top: 10rem;
+    font-size: 0.8em;
+    right: 0;
+  }
+}
+
+.bg-primary {
+    background-color: #21173d;
+}
+
+.text-slate-50 {
+  color: #fcfcfc;
+}
+
+.flex {
+  display: flex;
+}
+
+.flex-col {
+  flex-direction: column;
+}
+
+.min-h-screen {
+  min-height: 100vh;
+}
+
+.mx-auto {
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.max-w-4xl {
+  max-width: 64rem;
+}
+
+.flex-grow {
+  flex-grow: 1;
+}
+
+.text-center {
+  text-align: center;
+}
+
+.items-center {
+  align-items: center;
+}
+
+.justify-center {
+  justify-content: center;
+}
+
+.pb-6 {
+  padding-bottom: 1.5rem;
+}
+
+.text-3xl {
+  font-size: 3rem;
+}
+
+.py-10 {
+  padding-top: 2.5rem;
+  padding-bottom: 2.5rem;
+}
+
+.text-left {
+  text-align: left;
+}
+
+.px-20 {
+  padding-left: 5rem;
+  padding-right: 5rem;
+}
+
+.pb-2 {
+  padding-bottom: 0.5rem;
+}
+
+.text-2xl {
+  font-size: 2rem;
+}
+
+.pb-1 {
+  padding-bottom: 0.25rem;
+}
+
+.pb-3 {
+  padding-bottom: 0.75rem;
+}
+
+#privacyPolicy {
+  background-color: #1a51e7;
+}
+
+#privacyPolicy:hover {
+  background-color: #3866e6;
+}
+
+.footer {
+  background-color: var(--bg-color-purple);
+  color: var(--ft-color-white);
+  padding: 1rem;
+  text-align: center;
+  position: relative;
+  bottom: 0;
+  width: 100%;
+}
+
+@media (max-width: 600px) {
+  .text-left {
+    padding-left: 1rem;
+    padding-right: 1rem;
+  }
+  h1, h2 {
+    font-size: 1.2rem;
+  }
+}
+

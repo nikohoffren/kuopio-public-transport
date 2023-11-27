@@ -1,335 +1,317 @@
 export default class DataFetcher {
-    constructor(map, LabelOverlay, createBusIconWithNumber, busData) {
-        this.map = map;
-        this.LabelOverlay = LabelOverlay;
-        this.createBusIconWithNumber = createBusIconWithNumber;
-        this.busData = busData;
-        this.followedBusId = null;
-        this.shouldFollowBus = false;
-        this.showBusMarkers = true;
-        this.showBikeMarkers = true;
-        this.busMarkers = {};
-        this.bikeMarkers = {};
-        this.twoSeconds = 2000;
+  constructor(map, LabelOverlay, createBusIconWithNumber, busData) {
+    this.map = map;
+    this.LabelOverlay = LabelOverlay;
+    this.createBusIconWithNumber = createBusIconWithNumber;
+    this.busData = busData;
+    this.followedBusId = null;
+    this.shouldFollowBus = false;
+    this.showBusMarkers = true;
+    this.showBikeMarkers = true;
+    this.busMarkers = {};
+    this.bikeMarkers = {};
+    this.twoSeconds = 2000;
+  }
+
+  setShouldFollowBus(newValue) {
+    this.shouldFollowBus = newValue;
+    //* if shouldFollowBus is set to false, also unset the followed bus
+    if (!newValue && this.followedBusId !== null) {
+      this.busData[this.followedBusId].labelOverlay.isFollowed = false;
+      this.followedBusId = null;
     }
+  }
 
-    setShouldFollowBus(newValue) {
-        this.shouldFollowBus = newValue;
-        //* if shouldFollowBus is set to false, also unset the followed bus
-        if (!newValue && this.followedBusId !== null) {
-            this.busData[this.followedBusId].labelOverlay.isFollowed = false;
-            this.followedBusId = null;
-        }
-    }
+  setShowBusMarkers(visible) {
+    this.showBusMarkers = visible;
+    //* Loop through all bus markers and set their visibility
+    Object.values(this.busMarkers).forEach((marker) => {
+      marker.setVisible(this.showBusMarkers);
+    });
+  }
 
-    setShowBusMarkers(visible) {
-        this.showBusMarkers = visible;
-        //* Loop through all bus markers and set their visibility
-        Object.values(this.busMarkers).forEach((marker) => {
-            marker.setVisible(this.showBusMarkers);
-        });
-    }
+  setShowBikeMarkers(visible) {
+    this.showBikeMarkers = visible;
+    //* Loop through all bike station markers and set their visibility
+    Object.values(this.bikeMarkers).forEach((marker) => {
+      marker.setVisible(this.showBikeMarkers);
+    });
+  }
 
-    setShowBikeMarkers(visible) {
-        this.showBikeMarkers = visible;
-        //* Loop through all bike station markers and set their visibility
-        Object.values(this.bikeMarkers).forEach((marker) => {
-            marker.setVisible(this.showBikeMarkers);
-        });
-    }
+  animateMarker(marker, toPosition, duration) {
+    const start = performance.now();
+    const fromPosition = marker.getPosition();
+    const latDelta = toPosition.lat() - fromPosition.lat();
+    const lngDelta = toPosition.lng() - fromPosition.lng();
 
-    animateMarker(marker, toPosition, duration) {
-        const start = performance.now();
-        const fromPosition = marker.getPosition();
-        const latDelta = toPosition.lat() - fromPosition.lat();
-        const lngDelta = toPosition.lng() - fromPosition.lng();
+    requestAnimationFrame(function animate(now) {
+      const elapsed = now - start;
+      const t = elapsed / duration;
 
-        requestAnimationFrame(function animate(now) {
-            const elapsed = now - start;
-            const t = elapsed / duration;
+      if (t > 1) {
+        marker.setPosition(toPosition);
+      } else {
+        const lat = fromPosition.lat() + t * latDelta;
+        const lng = fromPosition.lng() + t * lngDelta;
+        marker.setPosition(new google.maps.LatLng(lat, lng));
+        requestAnimationFrame(animate);
+      }
+    });
+  }
 
-            if (t > 1) {
-                marker.setPosition(toPosition);
-            } else {
-                const lat = fromPosition.lat() + t * latDelta;
-                const lng = fromPosition.lng() + t * lngDelta;
-                marker.setPosition(new google.maps.LatLng(lat, lng));
-                requestAnimationFrame(animate);
-            }
-        });
-    }
+  async fetchAndDisplayBusLocations() {
+    try {
+      const apiUrl =
+        window.location.hostname === "localhost"
+          ? "http://localhost:3999/api/vehiclepositions"
+          : "/api/vehiclepositions";
 
-    async fetchAndDisplayBusLocations() {
-        try {
-            const apiUrl =
-                window.location.hostname === "localhost"
-                    ? "http://localhost:3999/api/vehiclepositions"
-                    : "/api/vehiclepositions";
+      const response = await fetch(apiUrl);
 
-            const response = await fetch(apiUrl);
+      if (!response.ok) {
+        throw new Error(`API request failed with status ${response.status}`);
+      }
 
-            if (!response.ok) {
-                throw new Error(
-                    `API request failed with status ${response.status}`
-                );
-            }
+      //* Process and display the bus locations on the map
+      const data = await response.json();
 
-            //* Process and display the bus locations on the map
-            const data = await response.json();
+      for (const busEntity of data.entity) {
+        const bus = busEntity.vehicle;
+        const position = {
+          lat: bus.position.latitude,
+          lng: bus.position.longitude,
+        };
+        const busId = bus.vehicle.id;
 
-            for (const busEntity of data.entity) {
-                const bus = busEntity.vehicle;
-                const position = {
-                    lat: bus.position.latitude,
-                    lng: bus.position.longitude,
-                };
-                const busId = bus.vehicle.id;
-
-                if (!this.busData[busId]) {
-                    const infoWindow = new google.maps.InfoWindow({
-                        //* converting the bus speed from m/s to km/h
-                        content: `
+        if (!this.busData[busId]) {
+          const infoWindow = new google.maps.InfoWindow({
+            //* converting the bus speed from m/s to km/h
+            content: `
                     <strong>Linja: ${bus.trip.routeId}</strong><br>
                     Reitti: ${bus.vehicle.label}<br>
                     Nopeus: ${(bus.position.speed * 3.6).toFixed(2)} km/h.
                 `,
-                    });
+          });
 
-                    const routeId = busEntity.vehicle.trip.routeId;
-                    //* Pass an onClick callback to the LabelOverlay constructor
-                    const labelOverlay = new this.LabelOverlay(
-                        position,
-                        routeId,
-                        this.map,
-                        infoWindow,
-                        () => {
-                            if (this.shouldFollowBus) {
-                                if (this.followedBusId !== null) {
-                                    this.busData[
-                                        this.followedBusId
-                                    ].labelOverlay.isFollowed = false;
-                                }
-                                this.followedBusId = busId;
-                                labelOverlay.isFollowed = true;
-                                this.map.setCenter(position);
-                            }
-                        }
-                    );
-
-                    this.busData[busId] = {
-                        infoWindow: infoWindow,
-                        labelOverlay: labelOverlay,
-                    };
-
-                    if (labelOverlay.isFollowed && this.shouldFollowBus) {
-                        this.map.setCenter(position);
-                    }
-                } else {
-                    const infoWindow = this.busData[busId].infoWindow;
-                    infoWindow.setContent(
-                        `
-                            <div class="card">
-                                <strong>Linja: ${bus.trip.routeId}</strong><br>
-                                Reitti: ${bus.vehicle.label}<br>
-                                Nopeus: ${(bus.position.speed * 3.6).toFixed(
-                                    2
-                                )} km/h.
-                                <p><a href='https://vilkku.kuopio.fi/' target='_blank'>Osta lippu</a></p>
-                            </div>
-                        `
-                    );
-
-                    const labelOverlay = this.busData[busId].labelOverlay;
-
-                    //* Set the marker visibility based on the showBusMarkers flag
-                    labelOverlay.marker.setVisible(this.showBusMarkers);
-
-                    //* Update the map center if the current bus is being followed
-                    if (labelOverlay.isFollowed) {
-                        this.map.setCenter(position);
-                    }
-
-                    //* update the marker's position with animation
-                    const nextPosition = new google.maps.LatLng(
-                        position.lat,
-                        position.lng
-                    );
-                    this.animateMarker(
-                        labelOverlay.marker,
-                        nextPosition,
-                        this.twoSeconds
-                    );
+          const routeId = busEntity.vehicle.trip.routeId;
+          //* Pass an onClick callback to the LabelOverlay constructor
+          const labelOverlay = new this.LabelOverlay(
+            position,
+            routeId,
+            this.map,
+            infoWindow,
+            () => {
+              if (this.shouldFollowBus) {
+                if (this.followedBusId !== null) {
+                  this.busData[
+                    this.followedBusId
+                  ].labelOverlay.isFollowed = false;
                 }
+                this.followedBusId = busId;
+                labelOverlay.isFollowed = true;
+                this.map.setCenter(position);
+              }
             }
-        } catch (error) {
-            console.error("Error fetching bus locations:", error);
+          );
+
+          this.busData[busId] = {
+            infoWindow: infoWindow,
+            labelOverlay: labelOverlay,
+          };
+
+          if (labelOverlay.isFollowed && this.shouldFollowBus) {
+            this.map.setCenter(position);
+          }
+        } else {
+          const infoWindow = this.busData[busId].infoWindow;
+          infoWindow.setContent(
+            `
+            <div class="card">
+                <strong>Linja: ${bus.trip.routeId}</strong><br>
+                Reitti: ${bus.vehicle.label}<br>
+                Nopeus: ${(bus.position.speed * 3.6).toFixed(2)} km/h.
+                <p><a href='https://vilkku.kuopio.fi/' target='_blank'>Osta lippu</a></p>
+            </div>
+            `
+          );
+
+          const labelOverlay = this.busData[busId].labelOverlay;
+
+          //* Set the marker visibility based on the showBusMarkers flag
+          labelOverlay.marker.setVisible(this.showBusMarkers);
+
+          //* Update the map center if the current bus is being followed
+          if (labelOverlay.isFollowed) {
+            this.map.setCenter(position);
+          }
+
+          //* update the marker's position with animation
+          const nextPosition = new google.maps.LatLng(
+            position.lat,
+            position.lng
+          );
+          this.animateMarker(
+            labelOverlay.marker,
+            nextPosition,
+            this.twoSeconds
+          );
         }
+      }
+    } catch (error) {
+      console.error("Error fetching bus locations:", error);
+    }
+  }
+
+  displayAlert(alert) {
+    const alertsContainerInfo = document.querySelector("#alertsContainerInfo");
+
+    const alertElement = document.createElement("div");
+    alertElement.classList.add("alert");
+
+    for (const translation of alert.descriptionText.translation) {
+      const languageElement = document.createElement("p");
+
+      // languageElement.textContent = `${translation.language}: ${translation.text}`;
+      languageElement.textContent = translation.text;
+
+      alertElement.appendChild(languageElement);
     }
 
-    displayAlert(alert) {
-        const alertsContainerInfo = document.querySelector(
-            "#alertsContainerInfo"
-        );
+    alertsContainerInfo.appendChild(alertElement);
+  }
 
-        const alertElement = document.createElement("div");
-        alertElement.classList.add("alert");
+  async fetchAndDisplayServiceAlerts() {
+    try {
+      const apiUrl =
+        window.location.hostname === "localhost"
+          ? "http://localhost:3999/api/servicealerts"
+          : "/api/servicealerts";
 
-        for (const translation of alert.descriptionText.translation) {
-            const languageElement = document.createElement("p");
+      const response = await fetch(apiUrl);
 
-            // languageElement.textContent = `${translation.language}: ${translation.text}`;
-            languageElement.textContent = translation.text;
+      if (!response.ok) {
+        throw new Error(`API request failed with status ${response.status}`);
+      }
 
-            alertElement.appendChild(languageElement);
+      //* Process and display the service alerts
+      const data = await response.json();
+      console.log("Service alerts:", data);
+
+      const alertsContainerButton = document.querySelector(
+        "#alertsContainerButton"
+      );
+
+      //* Check if there are alerts
+      if (data.entity.length > 0) {
+        //* Show the button
+        alertsContainerButton.style.display = "block";
+
+        //* Add alerts to the page
+        for (const alertEntity of data.entity) {
+          this.displayAlert(alertEntity.alert);
         }
-
-        alertsContainerInfo.appendChild(alertElement);
+      } else {
+        //* Hide the button
+        alertsContainerButton.style.display = "none";
+      }
+    } catch (error) {
+      console.error("Error fetching service alerts:", error);
     }
+  }
 
-    async fetchAndDisplayServiceAlerts() {
-        try {
-            const apiUrl =
-                window.location.hostname === "localhost"
-                    ? "http://localhost:3999/api/servicealerts"
-                    : "/api/servicealerts";
+  async fetchAndDisplayTripUpdates() {
+    try {
+      const apiUrl =
+        window.location.hostname === "localhost"
+          ? "http://localhost:3999/api/tripupdates"
+          : "/api/tripupdates";
 
-            const response = await fetch(apiUrl);
+      const response = await fetch(apiUrl);
 
-            if (!response.ok) {
-                throw new Error(
-                    `API request failed with status ${response.status}`
-                );
-            }
+      if (!response.ok) {
+        throw new Error(`API request failed with status ${response.status}`);
+      }
 
-            //* Process and display the service alerts
-            const data = await response.json();
-            console.log("Service alerts:", data);
+      //* Process and display the trip updates
+      const data = await response.json();
+      // console.log("Trip updates:", data);
+    } catch (error) {
+      console.error("Error fetching trip updates:", error);
+    }
+  }
 
-            const alertsContainerButton = document.querySelector(
-                "#alertsContainerButton"
-            );
+  async fetchAndDisplayFreeBikeLocations() {
+    const apiUrl =
+      window.location.hostname === "localhost"
+        ? "http://localhost:3999/.netlify/functions/vilkkuBicycles"
+        : "/.netlify/functions/vilkkuBicycles";
 
-            //* Check if there are alerts
-            if (data.entity.length > 0) {
-                //* Show the button
-                alertsContainerButton.style.display = "block";
+    try {
+      const response = await fetch(apiUrl);
 
-                //* Add alerts to the page
-                for (const alertEntity of data.entity) {
-                    this.displayAlert(alertEntity.alert);
-                }
-            } else {
-                //* Hide the button
-                alertsContainerButton.style.display = "none";
-            }
-        } catch (error) {
-            console.error("Error fetching service alerts:", error);
+      if (!response.ok) {
+        throw new Error(`API request failed with status ${response.status}`);
+      }
+
+      const data = await response.json();
+
+      const bikesAtStation = {};
+
+      for (const bike of data.bikeData.data.bikes) {
+        if (bike.station_id) {
+          if (!bikesAtStation[bike.station_id]) {
+            bikesAtStation[bike.station_id] = [];
+          }
+
+          bikesAtStation[bike.station_id].push(bike);
         }
-    }
+      }
 
-    async fetchAndDisplayTripUpdates() {
-        try {
-            const apiUrl =
-                window.location.hostname === "localhost"
-                    ? "http://localhost:3999/api/tripupdates"
-                    : "/api/tripupdates";
+      const stationStatusById = {};
 
-            const response = await fetch(apiUrl);
+      for (const station of data.stationStatusData.data.stations) {
+        stationStatusById[station.station_id] = station;
+      }
 
-            if (!response.ok) {
-                throw new Error(
-                    `API request failed with status ${response.status}`
-                );
-            }
+      for (const station of data.stationInformationData.data.stations) {
+        const stationStatus = stationStatusById[station.station_id];
+        if (stationStatus) {
+          const position = { lat: station.lat, lng: station.lon };
 
-            //* Process and display the trip updates
-            const data = await response.json();
-            // console.log("Trip updates:", data);
-        } catch (error) {
-            console.error("Error fetching trip updates:", error);
-        }
-    }
+          if (this.bikeMarkers[station.station_id]) {
+            this.bikeMarkers[station.station_id].setMap(null);
+            delete this.bikeMarkers[station.station_id];
+          }
 
-    async fetchAndDisplayFreeBikeLocations() {
-        const apiUrl =
-            window.location.hostname === "localhost"
-                ? "http://localhost:3999/.netlify/functions/vilkkuBicycles"
-                : "/.netlify/functions/vilkkuBicycles";
+          if (this.showBikeMarkers) {
+            const marker = new google.maps.Marker({
+              position,
+              map: this.map,
+              icon: {
+                url: "img/vilkku-bicycle-icon.png",
+                scaledSize: new google.maps.Size(30, 30),
+              },
+            });
 
-        try {
-            const response = await fetch(apiUrl);
+            this.bikeMarkers[station.station_id] = marker;
 
-            if (!response.ok) {
-                throw new Error(
-                    `API request failed with status ${response.status}`
-                );
-            }
-
-            const data = await response.json();
-
-            const bikesAtStation = {};
-
-            for (const bike of data.bikeData.data.bikes) {
-                if (bike.station_id) {
-                    if (!bikesAtStation[bike.station_id]) {
-                        bikesAtStation[bike.station_id] = [];
-                    }
-
-                    bikesAtStation[bike.station_id].push(bike);
-                }
-            }
-
-            const stationStatusById = {};
-
-            for (const station of data.stationStatusData.data.stations) {
-                stationStatusById[station.station_id] = station;
-            }
-
-            for (const station of data.stationInformationData.data.stations) {
-                const stationStatus = stationStatusById[station.station_id];
-                if (stationStatus) {
-                    const position = { lat: station.lat, lng: station.lon };
-
-                    if (this.bikeMarkers[station.station_id]) {
-                        this.bikeMarkers[station.station_id].setMap(null);
-                        delete this.bikeMarkers[station.station_id];
-                    }
-
-                    if (this.showBikeMarkers) {
-                        const marker = new google.maps.Marker({
-                            position,
-                            map: this.map,
-                            icon: {
-                                url: "img/vilkku-bicycle-icon.png",
-                                scaledSize: new google.maps.Size(30, 30),
-                            },
-                        });
-
-                        this.bikeMarkers[station.station_id] = marker;
-
-                        let bikeInfo = "";
-                        if (bikesAtStation[station.station_id]) {
-                            for (const bike of bikesAtStation[
-                                station.station_id
-                            ]) {
-                                let fuelPercent = (
-                                    bike.current_fuel_percent * 100
-                                ).toFixed(0);
-                                let rangeKm = (
-                                    bike.current_range_meters / 1000
-                                ).toFixed(2);
-                                if (isNaN(fuelPercent)) fuelPercent = "N/A";
-                                if (isNaN(rangeKm)) rangeKm = "N/A";
-                                bikeInfo += `
+            let bikeInfo = "";
+            if (bikesAtStation[station.station_id]) {
+              for (const bike of bikesAtStation[station.station_id]) {
+                let fuelPercent = (bike.current_fuel_percent * 100).toFixed(0);
+                let rangeKm = (bike.current_range_meters / 1000).toFixed(2);
+                if (isNaN(fuelPercent)) fuelPercent = "N/A";
+                if (isNaN(rangeKm)) rangeKm = "N/A";
+                bikeInfo += `
                                     <div style="display: flex; align-items: center;">
                                         <img src="img/freebike-img.jpg" alt="Freebike image" class="freebike-img">
                                         <p style="margin-left: 10px;">Freebike ${bike.bike_id}: Akku: ${fuelPercent}%</p>
                                     </div>`;
-                            }
-                        }
+              }
+            }
 
-                        const infoWindow = new google.maps.InfoWindow({
-                            content: `
+            const infoWindow = new google.maps.InfoWindow({
+              content: `
                                 <div class="card">
                                     <p><strong>Asema: ${station.name}</strong></p>
                                     <p>Pyöriä vapaana: ${stationStatus.num_bikes_available}</p>
@@ -337,20 +319,20 @@ export default class DataFetcher {
                                     ${bikeInfo}
                                 </div>
                             `,
-                        });
+            });
 
-                        marker.addListener("click", () => {
-                            infoWindow.open(this.map, marker);
-                        });
-                    }
-                } else {
-                    console.warn(
-                        `No status information found for station ${station.station_id}`
-                    );
-                }
-            }
-        } catch (error) {
-            console.error("Error fetching VILKKU bicycle data:", error);
+            marker.addListener("click", () => {
+              infoWindow.open(this.map, marker);
+            });
+          }
+        } else {
+          console.warn(
+            `No status information found for station ${station.station_id}`
+          );
         }
+      }
+    } catch (error) {
+      console.error("Error fetching VILKKU bicycle data:", error);
     }
+  }
 }

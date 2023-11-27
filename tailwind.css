@@ -1,0 +1,5 @@
+/* Run `npm run watch-css` to watch for changes to tailwind.css and automatically rebuild tailwind.css when changes are detected */
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
