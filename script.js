@@ -497,7 +497,7 @@ function displayRouteInfo(response, isBusRoute, polyline) {
         }
       }
     }
-    routeInfoHTML += `<p><a href="https://vilkku.kuopio.fi/" target="_blank" class="link">Osta lippu</a></p>`;
+    routeInfoHTML += `<p class="bg-blue-600 text-white rounded-md hover:bg-blue-700 p-2"><a href="https://vilkku.kuopio.fi/" target="_blank" class="link">Osta lippu</a></p>`;
   } else {
     for (const leg of legs) {
       routeInfoHTML += `<p>

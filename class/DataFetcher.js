@@ -195,14 +195,14 @@ export default class DataFetcher {
 
       //* Process and display the service alerts
       const data = await response.json();
-      console.log("Service alerts:", data);
+      // console.log("Service alerts:", data);
 
       const alertsContainerButton = document.querySelector(
         "#alertsContainerButton"
       );
 
       //* Check if there are alerts
-      if (data.entity.length > 0) {
+      if (data.entity && data.entity.length > 0) {
         //* Show the button
         alertsContainerButton.style.display = "block";
 
@@ -213,6 +213,7 @@ export default class DataFetcher {
       } else {
         //* Hide the button
         alertsContainerButton.style.display = "none";
+        console.log("No service alerts or data format is unexpected");
       }
     } catch (error) {
       console.error("Error fetching service alerts:", error);
