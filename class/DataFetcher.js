@@ -126,11 +126,11 @@ export default class DataFetcher {
           const infoWindow = this.busData[busId].infoWindow;
           infoWindow.setContent(
             `
-            <div class="card">
+            <div class="card py-1">
                 <strong>Linja: ${bus.trip.routeId}</strong><br>
                 Reitti: ${bus.vehicle.label}<br>
                 Nopeus: ${(bus.position.speed * 3.6).toFixed(2)} km/h.
-                <p><a href='https://vilkku.kuopio.fi/' target='_blank'>Osta lippu</a></p>
+                <p class="text-center bg-blue-600 text-white mt-2 rounded-md hover:bg-blue-700 mx-2 py-2"><a href='https://vilkku.kuopio.fi/' target='_blank'>Osta lippu</a></p>
             </div>
             `
           );
@@ -312,10 +312,10 @@ export default class DataFetcher {
 
             const infoWindow = new google.maps.InfoWindow({
               content: `
-                                <div class="card">
+                                <div class="card py-2">
                                     <p><strong>Asema: ${station.name}</strong></p>
                                     <p>Pyöriä vapaana: ${stationStatus.num_bikes_available}</p>
-                                    <p><a href='https://kaupunkipyorat.kuopio.fi/ajelulle.html' target='_blank'>Osta lippu</a></p>
+                                    <p class="text-center bg-blue-600 text-white p-2 mt-2 rounded-md hover:bg-blue-700 mx-2"><a href='https://kaupunkipyorat.kuopio.fi/ajelulle.html' target='_blank'>Osta lippu</a></p>
                                     ${bikeInfo}
                                 </div>
                             `,
