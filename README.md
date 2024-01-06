@@ -19,7 +19,7 @@ Clone this repository and then use npm to install dependencies.
 ```bash
 git clone https://github.com/nikohoffren/kuopio-public-transport.git
 cd /kuopio-public-transport
-npm install
+npm i
 ```
 
 To install CORS:
